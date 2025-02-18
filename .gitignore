@@ -1,0 +1,6 @@
+/.venv/
+/.idea/
+/youtube_automation/account_clips/
+/youtube_automation/account_secrets/
+/youtube_automation/account_tokens/
+/youtube_automation/logs/

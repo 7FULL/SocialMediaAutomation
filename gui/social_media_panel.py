@@ -264,7 +264,6 @@ class SocialMediaPanel(ctk.CTkFrame):
             # Sleep a bit before checking again
             time.sleep(60)  # check every 30 seconds or as you prefer
 
-
     def get_next_upload_time_for_account(self, schedule_data):
         """
         Finds the earliest future time (today or next day) from the account’s schedule
@@ -489,12 +488,24 @@ class SocialMediaPanel(ctk.CTkFrame):
                 auth_label.configure(text="Not Authenticated", text_color="red")
                 print(f"Failed or canceled re-auth for '{account_name.get()}'")
 
+        def deleteToken():
+            """
+            Deletes the token file for the account, forcing a re-authentication.
+            """
+            token_file = f"youtube_automation/account_tokens/token_{account_name.get()}.pickle"
+            if os.path.exists(token_file):
+                os.remove(token_file)
+                print(f"Deleted token for account '{account_name.get()}'")
+                acc_data["authenticated"] = False
+                auth_label.configure(text="Not Authenticated", text_color="red")
+            else:
+                print(f"No token found for account '{account_name.get()}'")
+
         reauth_btn = ctk.CTkButton(top_frame, text="Re-Authenticate", command=reauthenticate)
         reauth_btn.grid(row=8, column=0, columnspan=2, sticky="w", padx=5, pady=5)
 
-
-
-
+        delete_token_btn = ctk.CTkButton(top_frame, text="Delete Token", fg_color="red", command=deleteToken)
+        delete_token_btn.grid(row=8, column=2, columnspan=2, sticky="w", padx=5, pady=5)
 
         # -- Clip Folder / Generate Clips / Schedule
         folder_var = tk.StringVar(value=acc_data.get("clip_folder", ""))
@@ -539,7 +550,6 @@ class SocialMediaPanel(ctk.CTkFrame):
 
                 if not os.path.exists(f"youtube_automation/account_clips/{account_name.get()}"):
                     os.makedirs(f"youtube_automation/account_clips/{account_name.get()}")
-
 
                 # Copy all the clips from the old folder to the new folder
                 old_folder = f"youtube_automation/account_clips/{before_name}"
@@ -607,6 +617,7 @@ class SocialMediaPanel(ctk.CTkFrame):
             def _update():
                 progress_label.configure(text=msg)
                 progress_bar.set(val)
+
             progress_label.after(0, _update)
 
         def run_thread():
@@ -698,6 +709,7 @@ class SocialMediaPanel(ctk.CTkFrame):
             def _update():
                 progress_label.configure(text=msg)
                 progress_bar.set(val)
+
             progress_label.after(0, _update)
 
         def run_thread():

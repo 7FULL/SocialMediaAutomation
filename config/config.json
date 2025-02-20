@@ -27,6 +27,26 @@
                 "title": "Memes I found in TikTok",
                 "category_id": "24",
                 "clip_duration": 135
+            },
+            "sexy": {
+                "token_path": "",
+                "active": false,
+                "clip_folder": "I:/$$$/SocialMediaAutomation/youtube_automation/account_clips/sexy",
+                "schedule": {
+                    "Monday": [],
+                    "Tuesday": [],
+                    "Wednesday": [],
+                    "Thursday": [],
+                    "Friday": [],
+                    "Saturday": [],
+                    "Sunday": []
+                },
+                "authenticated": true,
+                "description": "",
+                "tags": "",
+                "title": "",
+                "category_id": "",
+                "clip_duration": 57
             }
         }
     },

@@ -7,7 +7,14 @@ import customtkinter as ctk
 import tkinter.filedialog as fd
 import threading
 import os
+from tkinter import messagebox
 from core.youtube_automation import YouTubeAutomation
+try:
+    from core.tiktok_automation_enhanced import TikTokAutomation
+    TIKTOK_ENHANCED_AVAILABLE = True
+except ImportError:
+    from core.tiktok_automation import TikTokAutomation
+    TIKTOK_ENHANCED_AVAILABLE = False
 
 DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
@@ -179,14 +186,24 @@ class SocialMediaPanel(ctk.CTkFrame):
             # Create a default schedule
             schedule_dict = {day: [] for day in DAYS_OF_WEEK}
 
-            # We'll authenticate right now:
-            authenticated = YouTubeAutomation.authenticate_youtube_account(name)
+            # Authenticate based on platform:
+            if self.social_media_name == "YouTube":
+                authenticated = YouTubeAutomation.authenticate_youtube_account(name)
+            elif self.social_media_name == "TikTok":
+                authenticated = TikTokAutomation.authenticate_tiktok_account(name)
+            else:
+                authenticated = True  # Simulate for other platforms
+                
             if not authenticated:
-                print(f"User did not authenticate for account '{name}'. Setting account as not authenticated.")
-                # Optionally set active=False if user didn't authenticate
+                result = messagebox.askyesno(
+                    "Authentication Failed",
+                    f"Authentication failed for account '{name}'.\n\nDo you want to save the account anyway?"
+                )
+                if not result:
+                    return
                 is_active_var.set(False)
 
-            clips_folder = f"youtube_automation/account_clips/{name}"
+            clips_folder = f"{self.social_media_name.lower()}_automation/account_clips/{name}"
 
             if not os.path.exists(clips_folder):
                 os.makedirs(clips_folder)
@@ -313,8 +330,14 @@ class SocialMediaPanel(ctk.CTkFrame):
         # 3) Call your "upload_and_log_short" or similar
         print(f"Uploading for account: {account_name}. Using the account's schedule, clip folder, etc.")
 
-        yta = YouTubeAutomation(acc_data=acc_data, account_name=account_name)
-        yta.upload_and_log_short()
+        if self.social_media_name == "YouTube":
+            yta = YouTubeAutomation(acc_data=acc_data, account_name=account_name)
+            yta.upload_and_log_short()
+        elif self.social_media_name == "TikTok":
+            tta = TikTokAutomation(acc_data=acc_data, account_name=account_name)
+            tta.upload_and_log_short()
+        else:
+            print(f"Upload functionality not implemented for {self.social_media_name}")
 
     # -------------------------------------------------------------------------
     # Accounts Table: minimal columns (Active, Auth, Name, Edit, Delete)
@@ -605,7 +628,7 @@ class SocialMediaPanel(ctk.CTkFrame):
         progress_bar.set(0.0)
         progress_bar.pack(padx=10, pady=5)
 
-        progress_label = ctk.CTkLabel(dialog, text="Waiting to start...")
+        progress_label = ctk.CTkLabel(dialog, text="Ready to start...")
         progress_label.pack(padx=10, pady=5)
 
         account_data = self.accounts[account_name]
@@ -697,7 +720,7 @@ class SocialMediaPanel(ctk.CTkFrame):
         progress_bar.set(0.0)
         progress_bar.pack(padx=10, pady=5)
 
-        progress_label = ctk.CTkLabel(dialog, text="Waiting to start...")
+        progress_label = ctk.CTkLabel(dialog, text="Ready to start...")
         progress_label.pack(padx=10, pady=5)
 
         account_data = self.accounts[account_name]

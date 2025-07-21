@@ -1,37 +1,15 @@
 {
     "YouTube": {
         "auto_upload": true,
+        "accounts": {}
+    },
+    "TikTok": {
+        "auto_upload": false,
         "accounts": {
-            "tik-tok-brainrot": {
-                "token_path": "123",
-                "active": true,
-                "clip_folder": "I:/$$$/SocialMediaAutomation/youtube_automation/account_clips/tik-tok-brainrot",
-                "schedule": {
-                    "Monday": [
-                        "08:00",
-                        "09:00",
-                        "23:40"
-                    ],
-                    "Tuesday": [
-                        "0:25"
-                    ],
-                    "Wednesday": [],
-                    "Thursday": [],
-                    "Friday": [],
-                    "Saturday": [],
-                    "Sunday": []
-                },
-                "authenticated": true,
-                "description": "Funny and stupid memes I get while being on tiktok",
-                "tags": "memes, funny, compilation, funnyvideos, memecompilation, humor, lol, dankmemes, viral, trending, funnymemes, shorts, funnyshorts, comedy, bestmemes",
-                "title": "Memes I found in TikTok",
-                "category_id": "24",
-                "clip_duration": 135
-            },
-            "sexy": {
+            "a": {
                 "token_path": "",
-                "active": false,
-                "clip_folder": "I:/$$$/SocialMediaAutomation/youtube_automation/account_clips/sexy",
+                "active": true,
+                "clip_folder": "tiktok_automation/account_clips/a",
                 "schedule": {
                     "Monday": [],
                     "Tuesday": [],
@@ -49,10 +27,6 @@
                 "clip_duration": 57
             }
         }
-    },
-    "TikTok": {
-        "auto_upload": false,
-        "accounts": {}
     },
     "Instagram": {
         "auto_upload": false,

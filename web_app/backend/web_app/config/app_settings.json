@@ -1,0 +1,51 @@
+{
+  "general": {
+    "appName": "Social Media Automation Suite",
+    "timezone": "UTC+0",
+    "language": "en",
+    "theme": "dark",
+    "autoSave": true,
+    "maxConcurrentUploads": 10,
+    "defaultClipDuration": 57,
+    "retryAttempts": 5
+  },
+  "notifications": {
+    "emailNotifications": true,
+    "uploadSuccess": true,
+    "uploadFailure": true,
+    "systemUpdates": false,
+    "maintenanceAlerts": true,
+    "weeklyReports": true,
+    "emailAddress": "phermidagomez@gmail.com",
+    "mailjetApiKey": "4e9e331827183dec18f774eb3081c464",
+    "mailjetSecretKey": "071c7040862b59f38edfad7a890c0bfb"
+  },
+  "security": {
+    "sessionTimeout": 30,
+    "requireStrongPasswords": true,
+    "twoFactorAuth": false,
+    "loginAttempts": 5,
+    "ipWhitelist": [],
+    "auditLogs": true,
+    "encryptionEnabled": true,
+    "allowedIPs": []
+  },
+  "performance": {
+    "uploadBandwidth": 10,
+    "downloadBandwidth": 50,
+    "maxFileSize": 1024,
+    "compressionQuality": 85,
+    "parallelProcessing": true,
+    "cacheSize": 2048,
+    "cleanupInterval": 24,
+    "monitorSystem": true
+  },
+  "backup": {
+    "autoBackup": true,
+    "backupInterval": "daily",
+    "retentionDays": 30,
+    "includeVideos": false,
+    "backupLocation": "web_app/backups",
+    "lastBackup": null
+  }
+}

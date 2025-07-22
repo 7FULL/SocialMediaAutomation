@@ -90,8 +90,10 @@ function PlatformDetail() {
     try {
       setLoading(true);
       const data = await getAccounts(platformName);
+      console.log('Loaded accounts data:', data); // Debug log
       setAccounts(data);
     } catch (error) {
+      console.error('Error loading accounts:', error); // Debug log
       toast.error('Failed to load accounts');
     } finally {
       setLoading(false);
@@ -331,13 +333,23 @@ function PlatformDetail() {
               </div>
             </div>
           </div>
-          <button
-            onClick={() => setShowAddAccount(true)}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Account
-          </button>
+          <div className="flex space-x-3">
+            <button
+              onClick={loadAccounts}
+              className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              title="Refresh account data"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </button>
+            <button
+              onClick={() => setShowAddAccount(true)}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Account
+            </button>
+          </div>
         </div>
       </div>
 

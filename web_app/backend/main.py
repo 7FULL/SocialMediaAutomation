@@ -400,7 +400,10 @@ async def get_accounts(
     """Get accounts for a specific platform"""
     verify_token(token.credentials)
     
-    platform_config = config_data.get(platform_name, {})
+    # Load fresh config data to ensure we have the latest authentication status
+    fresh_config_data = load_config()
+    print(f"Loading accounts for {platform_name}") # Debug log
+    platform_config = fresh_config_data.get(platform_name, {})
     accounts = platform_config.get("accounts", {})
     
     account_list = []
@@ -431,10 +434,13 @@ async def get_accounts(
             status=status
         )
         
+        auth_status = data.get("authenticated", False)
+        print(f"Account {name}: authenticated={auth_status}") # Debug log
+        
         account_list.append(AccountInfo(
             name=name,
             active=data.get("active", True),
-            authenticated=data.get("authenticated", False),
+            authenticated=auth_status,
             clip_folder=clip_folder,
             description=data.get("description", ""),
             tags=data.get("tags", ""),
@@ -521,10 +527,13 @@ async def update_account(
     """Update an existing account"""
     verify_token(token.credentials)
     
-    if platform_name not in config_data or account_name not in config_data[platform_name]["accounts"]:
+    # Load fresh config data
+    fresh_config_data = load_config()
+    
+    if platform_name not in fresh_config_data or account_name not in fresh_config_data[platform_name]["accounts"]:
         raise HTTPException(status_code=404, detail="Account not found")
     
-    account_data = config_data[platform_name]["accounts"][account_name]
+    account_data = fresh_config_data[platform_name]["accounts"][account_name]
     
     # Update account data
     if account.active is not None:
@@ -542,7 +551,7 @@ async def update_account(
     if account.schedule is not None:
         account_data["schedule"] = account.schedule
     
-    save_config(config_data)
+    save_config(fresh_config_data)
     
     return {"message": f"Account {account_name} updated successfully"}
 
@@ -555,10 +564,13 @@ async def delete_account(
     """Delete an account"""
     verify_token(token.credentials)
     
-    if platform_name not in config_data or account_name not in config_data[platform_name]["accounts"]:
+    # Load fresh config data
+    fresh_config_data = load_config()
+    
+    if platform_name not in fresh_config_data or account_name not in fresh_config_data[platform_name]["accounts"]:
         raise HTTPException(status_code=404, detail="Account not found")
     
-    account_data = config_data[platform_name]["accounts"][account_name]
+    account_data = fresh_config_data[platform_name]["accounts"][account_name]
     
     # Remove clips folder
     clips_folder = account_data.get("clip_folder", "")
@@ -567,9 +579,9 @@ async def delete_account(
         shutil.rmtree(clips_folder)
     
     # Remove account from config
-    del config_data[platform_name]["accounts"][account_name]
+    del fresh_config_data[platform_name]["accounts"][account_name]
     
-    save_config(config_data)
+    save_config(fresh_config_data)
     
     return {"message": f"Account {account_name} deleted successfully"}
 

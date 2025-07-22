@@ -118,7 +118,7 @@ class YouTubeAutomation:
         youtube = googleapiclient.discovery.build("youtube", "v3", credentials=credentials)
 
         # Determinar el siguiente número de parte
-        log_file = f"youtube_automation/logs/{self.account_name}_uploaded_videos.json"
+        log_file = f"web_app/backend/youtube_automation/logs/{self.account_name}_uploaded_videos.json"
         part_number = self.get_next_part_number(log_file)
 
         file_path = f"{self.clips_folder}/clips/clip_{part_number}.mp4"
@@ -156,7 +156,7 @@ class YouTubeAutomation:
             print(f"Short numero {part_number} subido correctamente")
 
             # Registrar el video en el JSON
-            self.log_video(log_file)
+            self.log_video(title)
         else:
             print("Short no subido por un error ocurrido")
 

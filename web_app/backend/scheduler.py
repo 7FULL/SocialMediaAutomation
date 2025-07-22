@@ -21,6 +21,10 @@ class SchedulerService:
         self.schedulers = {}
         self.stop_events = {}
         self.scheduler_threads = {}
+    
+    def update_config(self, new_config_data: Dict):
+        """Update the configuration data"""
+        self.config_data = new_config_data
         
     async def start_platform_scheduler(self, platform_name: str):
         """Start scheduler for a specific platform"""
@@ -142,3 +146,57 @@ class SchedulerService:
                 
         except Exception as e:
             print(f"Error uploading for {platform_name} account {account_name}: {e}")
+
+    def get_scheduler_status(self, platform_name: str) -> dict:
+        """Get scheduler status for a platform"""
+        return {
+            "platform_name": platform_name,
+            "is_running": platform_name in self.scheduler_threads,
+            "auto_upload": self.config_data.get(platform_name, {}).get("auto_upload", False)
+        }
+    
+    def get_next_upload_times(self, platform_name: str) -> dict:
+        """Get next upload times for all accounts in a platform"""
+        platform_config = self.config_data.get(platform_name, {})
+        accounts = platform_config.get("accounts", {})
+        
+        upload_times = {}
+        for account_name, account_data in accounts.items():
+            if account_data.get("active", False) and account_data.get("authenticated", False):
+                schedule = account_data.get("schedule", {})
+                next_time = self._get_next_upload_time(schedule)
+                
+                upload_times[account_name] = {
+                    "next_upload": next_time.isoformat() if next_time else None,
+                    "time_remaining": self._get_time_remaining(next_time) if next_time else None,
+                    "active": True
+                }
+            else:
+                upload_times[account_name] = {
+                    "next_upload": None,
+                    "time_remaining": None,
+                    "active": False
+                }
+        
+        return upload_times
+    
+    def _get_time_remaining(self, next_time: datetime) -> str:
+        """Get human readable time remaining until next upload"""
+        if not next_time:
+            return None
+        
+        now = datetime.now()
+        if next_time <= now:
+            return "Ready to upload"
+        
+        diff = next_time - now
+        days = diff.days
+        hours, remainder = divmod(diff.seconds, 3600)
+        minutes, _ = divmod(remainder, 60)
+        
+        if days > 0:
+            return f"{days}d {hours}h {minutes}m"
+        elif hours > 0:
+            return f"{hours}h {minutes}m"
+        else:
+            return f"{minutes}m"

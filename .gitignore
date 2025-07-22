@@ -4,6 +4,8 @@
 /youtube_automation/account_secrets/
 /youtube_automation/account_tokens/
 /youtube_automation/logs/
+/web_app/backend/youtube_automation/*
+/web_app/backend/youtube_automation/account_clips/*
 /web_app/frontend/node_modules/*
 /web_app/frontend/node_modules/.bin/acorn
 /web_app/frontend/node_modules/.bin/acorn.cmd

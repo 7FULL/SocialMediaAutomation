@@ -166,6 +166,27 @@ export function ApiProvider({ children }) {
     }
   };
 
+  // Scheduler API functions
+  const getSchedulerStatus = async (platformName) => {
+    try {
+      const response = await api.get(`/platforms/${platformName}/scheduler/status`);
+      return response.data;
+    } catch (error) {
+      console.error('Error getting scheduler status:', error);
+      throw error;
+    }
+  };
+
+  const getNextUploadTimes = async (platformName) => {
+    try {
+      const response = await api.get(`/platforms/${platformName}/scheduler/next-uploads`);
+      return response.data;
+    } catch (error) {
+      console.error('Error getting next upload times:', error);
+      throw error;
+    }
+  };
+
   // Settings API functions
   const getSettings = async () => {
     try {
@@ -352,6 +373,9 @@ export function ApiProvider({ children }) {
     uploadContent,
     getTaskStatus,
     getDashboardStats,
+    // Scheduler functions
+    getSchedulerStatus,
+    getNextUploadTimes,
     // Settings functions
     getSettings,
     saveSettings,

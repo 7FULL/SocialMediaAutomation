@@ -7,7 +7,9 @@
                 "clip_folder": "youtube_automation/account_clips/LaughStorm",
                 "schedule": {
                     "Monday": [],
-                    "Tuesday": [],
+                    "Tuesday": [
+                        "17:31"
+                    ],
                     "Wednesday": [],
                     "Thursday": [],
                     "Friday": [],
@@ -26,14 +28,14 @@
     },
     "Instagram": {
         "accounts": {},
-        "auto_upload": true
+        "auto_upload": false
     },
     "Twitter": {
         "accounts": {},
-        "auto_upload": true
+        "auto_upload": false
     },
     "TikTok": {
         "accounts": {},
-        "auto_upload": true
+        "auto_upload": false
     }
 }

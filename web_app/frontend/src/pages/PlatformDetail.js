@@ -35,7 +35,9 @@ function PlatformDetail() {
     generateClipsFromUrl,
     generateClipsFromFile,
     uploadContent,
-    getTaskStatus 
+    getTaskStatus,
+    getSchedulerStatus,
+    getNextUploadTimes
   } = useApi();
 
   const [accounts, setAccounts] = useState([]);
@@ -48,6 +50,8 @@ function PlatformDetail() {
   const [activeTasks, setActiveTasks] = useState({});
   const [isGeneratingClips, setIsGeneratingClips] = useState(false);
   const [newTimeInputs, setNewTimeInputs] = useState({});
+  const [schedulerStatus, setSchedulerStatus] = useState(null);
+  const [nextUploads, setNextUploads] = useState({});
 
   // Form states
   const [accountForm, setAccountForm] = useState({
@@ -84,6 +88,7 @@ function PlatformDetail() {
 
   useEffect(() => {
     loadAccounts();
+    loadSchedulerInfo();
   }, [platformName]);
 
   const loadAccounts = async () => {
@@ -97,6 +102,19 @@ function PlatformDetail() {
       toast.error('Failed to load accounts');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadSchedulerInfo = async () => {
+    try {
+      const [statusData, uploadsData] = await Promise.all([
+        getSchedulerStatus(platformName),
+        getNextUploadTimes(platformName)
+      ]);
+      setSchedulerStatus(statusData);
+      setNextUploads(uploadsData);
+    } catch (error) {
+      console.error('Error loading scheduler info:', error);
     }
   };
 
@@ -127,6 +145,7 @@ function PlatformDetail() {
       });
       setAuthData({});
       loadAccounts();
+      loadSchedulerInfo();
     } catch (error) {
       toast.error('Failed to create account');
     }
@@ -142,6 +161,7 @@ function PlatformDetail() {
       setShowAccountEditor(false);
       setSelectedAccount(null);
       loadAccounts();
+      loadSchedulerInfo();
     } catch (error) {
       toast.error('Failed to update account');
     }
@@ -153,6 +173,7 @@ function PlatformDetail() {
         await deleteAccount(platformName, accountName);
         toast.success('Account deleted successfully!');
         loadAccounts();
+        loadSchedulerInfo();
       } catch (error) {
         toast.error('Failed to delete account');
       }
@@ -173,6 +194,7 @@ function PlatformDetail() {
       setSelectedAccount(null);
       setReauthData({});
       loadAccounts();
+      loadSchedulerInfo();
     } catch (error) {
       toast.error('Failed to re-authenticate account');
     }
@@ -335,9 +357,12 @@ function PlatformDetail() {
           </div>
           <div className="flex space-x-3">
             <button
-              onClick={loadAccounts}
+              onClick={() => {
+                loadAccounts();
+                loadSchedulerInfo();
+              }}
               className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-              title="Refresh account data"
+              title="Refresh account and scheduler data"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
@@ -352,6 +377,75 @@ function PlatformDetail() {
           </div>
         </div>
       </div>
+
+      {/* Scheduler Status */}
+      {schedulerStatus && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                <Clock className="h-5 w-5 mr-2" />
+                Scheduler Status
+              </h2>
+              <div className="flex items-center space-x-2">
+                <div className={`w-3 h-3 rounded-full ${schedulerStatus.is_running ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                <span className={`text-sm font-medium ${schedulerStatus.is_running ? 'text-green-700' : 'text-gray-500'}`}>
+                  {schedulerStatus.is_running ? 'Running' : 'Stopped'}
+                </span>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Object.entries(nextUploads).map(([accountName, uploadInfo]) => (
+                <div key={accountName} className={`p-4 rounded-lg border-2 ${
+                  uploadInfo.active 
+                    ? uploadInfo.time_remaining === 'Ready to upload' 
+                      ? 'border-orange-200 bg-orange-50'
+                      : 'border-green-200 bg-green-50'
+                    : 'border-gray-200 bg-gray-50'
+                }`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium text-gray-900">{accountName}</h4>
+                    <div className={`w-2 h-2 rounded-full ${
+                      uploadInfo.active 
+                        ? uploadInfo.time_remaining === 'Ready to upload'
+                          ? 'bg-orange-500'
+                          : 'bg-green-500'
+                        : 'bg-gray-400'
+                    }`}></div>
+                  </div>
+                  
+                  {uploadInfo.active ? (
+                    <>
+                      {uploadInfo.next_upload && (
+                        <p className="text-sm text-gray-600 mb-1">
+                          Next: {new Date(uploadInfo.next_upload).toLocaleString()}
+                        </p>
+                      )}
+                      <p className={`text-sm font-medium ${
+                        uploadInfo.time_remaining === 'Ready to upload' 
+                          ? 'text-orange-600' 
+                          : 'text-green-600'
+                      }`}>
+                        {uploadInfo.time_remaining || 'No schedule set'}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-sm text-gray-500">Account inactive</p>
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            {Object.keys(nextUploads).length === 0 && (
+              <div className="text-center py-8">
+                <Clock className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500">No accounts configured</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Accounts List */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">

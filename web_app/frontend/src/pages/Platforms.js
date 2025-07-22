@@ -36,6 +36,8 @@ function Platforms() {
     setToggleLoading({ ...toggleLoading, [platformName]: true });
     try {
       await togglePlatformAutoUpload(platformName);
+      // Reload platforms data to update the UI state
+      await loadPlatforms();
       toast.success(`${platformName} auto-upload toggled successfully`);
     } catch (error) {
       toast.error('Failed to toggle platform');

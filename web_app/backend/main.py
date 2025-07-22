@@ -306,30 +306,33 @@ async def get_platforms(token: HTTPAuthorizationCredentials = Depends(security))
     """Get available social media platforms"""
     verify_token(token.credentials)
     
+    # Load fresh config data to get current toggle states
+    fresh_config_data = load_config()
+    
     platforms = [
         PlatformInfo(
             name="YouTube",
             icon="🎥",
-            active=config_data.get("YouTube", {}).get("auto_upload", False),
-            account_count=len(config_data.get("YouTube", {}).get("accounts", {}))
+            active=fresh_config_data.get("YouTube", {}).get("auto_upload", False),
+            account_count=len(fresh_config_data.get("YouTube", {}).get("accounts", {}))
         ),
         PlatformInfo(
             name="TikTok",
             icon="🎵",
-            active=config_data.get("TikTok", {}).get("auto_upload", False),
-            account_count=len(config_data.get("TikTok", {}).get("accounts", {}))
+            active=fresh_config_data.get("TikTok", {}).get("auto_upload", False),
+            account_count=len(fresh_config_data.get("TikTok", {}).get("accounts", {}))
         ),
         PlatformInfo(
             name="Instagram",
             icon="📸",
-            active=config_data.get("Instagram", {}).get("auto_upload", False),
-            account_count=len(config_data.get("Instagram", {}).get("accounts", {}))
+            active=fresh_config_data.get("Instagram", {}).get("auto_upload", False),
+            account_count=len(fresh_config_data.get("Instagram", {}).get("accounts", {}))
         ),
         PlatformInfo(
             name="Twitter",
             icon="🐦",
-            active=config_data.get("Twitter", {}).get("auto_upload", False),
-            account_count=len(config_data.get("Twitter", {}).get("accounts", {}))
+            active=fresh_config_data.get("Twitter", {}).get("auto_upload", False),
+            account_count=len(fresh_config_data.get("Twitter", {}).get("accounts", {}))
         )
     ]
     
@@ -343,21 +346,55 @@ async def toggle_platform_auto_upload(
     """Toggle auto-upload for a platform"""
     verify_token(token.credentials)
     
-    if platform_name not in config_data:
-        config_data[platform_name] = {"accounts": {}}
+    # Load fresh config data to avoid overwriting existing data
+    fresh_config_data = load_config()
     
-    current_status = config_data[platform_name].get("auto_upload", False)
-    config_data[platform_name]["auto_upload"] = not current_status
+    if platform_name not in fresh_config_data:
+        fresh_config_data[platform_name] = {"accounts": {}, "auto_upload": False}
     
-    # Update scheduler
+    current_status = fresh_config_data[platform_name].get("auto_upload", False)
+    fresh_config_data[platform_name]["auto_upload"] = not current_status
+    
+    # Update scheduler with fresh config
+    scheduler_service.update_config(fresh_config_data)
+    
     if not current_status:
         await scheduler_service.start_platform_scheduler(platform_name)
     else:
         await scheduler_service.stop_platform_scheduler(platform_name)
     
-    save_config(config_data)
+    save_config(fresh_config_data)
     
     return {"message": f"Auto-upload {'enabled' if not current_status else 'disabled'} for {platform_name}"}
+
+# Scheduler status endpoints
+@app.get("/api/platforms/{platform_name}/scheduler/status")
+async def get_scheduler_status(
+    platform_name: str,
+    token: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get scheduler status for a platform"""
+    verify_token(token.credentials)
+    
+    # Update scheduler with fresh config
+    fresh_config_data = load_config()
+    scheduler_service.update_config(fresh_config_data)
+    
+    return scheduler_service.get_scheduler_status(platform_name)
+
+@app.get("/api/platforms/{platform_name}/scheduler/next-uploads")
+async def get_next_upload_times(
+    platform_name: str,
+    token: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get next upload times for all accounts in a platform"""
+    verify_token(token.credentials)
+    
+    # Update scheduler with fresh config
+    fresh_config_data = load_config()
+    scheduler_service.update_config(fresh_config_data)
+    
+    return scheduler_service.get_next_upload_times(platform_name)
 
 def count_clips_in_folder(folder_path: str) -> int:
     """Count video clips in a folder"""

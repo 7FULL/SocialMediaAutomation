@@ -38,6 +38,7 @@ class YouTubeAutomation:
         self.account_name = account_name
         self.clips_folder = acc_data.get("clip_folder")
         self.acc_data = acc_data
+        self.original_video_title = None  # Store original YouTube video title
         self.scopes = ["https://www.googleapis.com/auth/youtube.upload"]
         self.po_token = None
 
@@ -48,6 +49,8 @@ class YouTubeAutomation:
     def download_video(self):
         yt = YouTube(self.url)
         title = self.sanitize_filename(yt.title)
+        # Store original title for later use in clip titles
+        self.original_video_title = yt.title
         video_stream = yt.streams.filter(only_video=True, file_extension='mp4').order_by('resolution').desc().first()
         self.video_path = os.path.join(self.output_path, f"{title}_video.mp4")
         video_stream.download(output_path=self.output_path, filename=f"{title}_video.mp4")
@@ -120,8 +123,23 @@ class YouTubeAutomation:
 
         file_path = f"{self.clips_folder}/clips/clip_{part_number}.mp4"
 
-        title = self.acc_data.get("title") + " pt: " + str(part_number)
-        description = self.acc_data.get("description") + " pt: " + str(part_number)
+        # Generate title - use configured title or fallback to original video title
+        account_title = self.acc_data.get("title", "").strip()
+        if account_title:
+            title = account_title + " pt: " + str(part_number)
+        elif self.original_video_title:
+            # Use original video title + part number
+            title = f"{self.original_video_title} - Part {part_number}"
+        else:
+            # Final fallback to generic title
+            title = f"Video Clip #{part_number}"
+        
+        # Generate description
+        account_description = self.acc_data.get("description", "").strip()
+        if account_description:
+            description = account_description + " pt: " + str(part_number)
+        else:
+            description = f"Automatically generated video clip #{part_number}"
 
         # Generate an array of tags from ,
         tags = self.acc_data.get("tags")

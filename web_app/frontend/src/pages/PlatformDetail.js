@@ -613,6 +613,48 @@ function PlatformDetail() {
                     placeholder="gaming, entertainment, music"
                   />
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Default Video Title (optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={accountForm.title}
+                    onChange={(e) => setAccountForm(prev => ({ ...prev, title: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter default title for videos"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Leave empty for auto-generated titles</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    YouTube Category
+                  </label>
+                  <select
+                    value={accountForm.category_id}
+                    onChange={(e) => setAccountForm(prev => ({ ...prev, category_id: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select a category</option>
+                    <option value="1">Film & Animation</option>
+                    <option value="2">Autos & Vehicles</option>
+                    <option value="10">Music</option>
+                    <option value="15">Pets & Animals</option>
+                    <option value="17">Sports</option>
+                    <option value="19">Travel & Events</option>
+                    <option value="20">Gaming</option>
+                    <option value="22">People & Blogs</option>
+                    <option value="23">Comedy</option>
+                    <option value="24">Entertainment</option>
+                    <option value="25">News & Politics</option>
+                    <option value="26">Howto & Style</option>
+                    <option value="27">Education</option>
+                    <option value="28">Science & Technology</option>
+                    <option value="29">Nonprofits & Activism</option>
+                  </select>
+                </div>
                 
                 <div className="flex items-center">
                   <input
@@ -857,6 +899,59 @@ function PlatformDetail() {
                       onChange={(e) => setSelectedAccount({...selectedAccount, clip_duration: parseInt(e.target.value)})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
+                  </div>
+                </div>
+
+                {/* Video Configuration Section */}
+                <div className="border-t pt-6">
+                  <h4 className="text-md font-semibold text-gray-900 mb-4">Video Configuration</h4>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Default Video Title
+                      </label>
+                      <input
+                        type="text"
+                        value={selectedAccount.title || ''}
+                        onChange={(e) => setSelectedAccount({...selectedAccount, title: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Enter default title for videos (leave empty for auto-generated)"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        This will be the default title for uploaded videos. Leave empty to use auto-generated titles.
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        YouTube Category ID
+                      </label>
+                      <select
+                        value={selectedAccount.category_id || ''}
+                        onChange={(e) => setSelectedAccount({...selectedAccount, category_id: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Select a category</option>
+                        <option value="1">Film & Animation</option>
+                        <option value="2">Autos & Vehicles</option>
+                        <option value="10">Music</option>
+                        <option value="15">Pets & Animals</option>
+                        <option value="17">Sports</option>
+                        <option value="19">Travel & Events</option>
+                        <option value="20">Gaming</option>
+                        <option value="22">People & Blogs</option>
+                        <option value="23">Comedy</option>
+                        <option value="24">Entertainment</option>
+                        <option value="25">News & Politics</option>
+                        <option value="26">Howto & Style</option>
+                        <option value="27">Education</option>
+                        <option value="28">Science & Technology</option>
+                        <option value="29">Nonprofits & Activism</option>
+                      </select>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Choose the appropriate YouTube category for your videos. This helps with discoverability.
+                      </p>
+                    </div>
                   </div>
                 </div>
 

@@ -117,11 +117,15 @@ class YouTubeAutomation:
 
         youtube = googleapiclient.discovery.build("youtube", "v3", credentials=credentials)
 
-        # Determinar el siguiente número de parte
+        # Determinar el siguiente clip a subir
         log_file = f"web_app/backend/youtube_automation/logs/{self.account_name}_uploaded_videos.json"
-        part_number = self.get_next_part_number(log_file)
+        clip_filename, part_number = self.get_next_clip_to_upload(log_file)
+        
+        if not clip_filename:
+            print(f"No clips available to upload for account {self.account_name}")
+            return False
 
-        file_path = f"{self.clips_folder}/clips/clip_{part_number}.mp4"
+        file_path = f"{self.clips_folder}/clips/{clip_filename}"
 
         # Generate title - use configured title or fallback to original video title
         account_title = self.acc_data.get("title", "").strip()
@@ -156,20 +160,48 @@ class YouTubeAutomation:
             print(f"Short numero {part_number} subido correctamente")
 
             # Registrar el video en el JSON
-            self.log_video(title)
+            self.log_video(title, clip_filename)
         else:
             print("Short no subido por un error ocurrido")
 
-    @staticmethod
-    def get_next_part_number(log_file):
-        # Cargar los datos existentes
+    def get_next_clip_to_upload(self, log_file):
+        """Get the next clip file that hasn't been uploaded yet"""
+        # Get list of uploaded clips from log
+        uploaded_clips = set()
         if os.path.exists(log_file):
             with open(log_file, 'r') as f:
                 data = json.load(f)
-                return len(data.get("videos", [])) + 1  # Retornar el siguiente número de parte
-        else:
-            os.makedirs(os.path.dirname(log_file), exist_ok=True)
-        return 1  # Si no existe, empezar desde 1
+                for video in data.get("videos", []):
+                    # Extract clip number from filename if stored
+                    if "clip_file" in video:
+                        uploaded_clips.add(video["clip_file"])
+        
+        # Get available clips in the folder
+        clips_folder = os.path.join(self.clips_folder, "clips")
+        if not os.path.exists(clips_folder):
+            return None, 1
+        
+        # Get all clip files and sort them numerically
+        clip_files = []
+        for file in os.listdir(clips_folder):
+            if file.startswith("clip_") and file.endswith(".mp4"):
+                try:
+                    # Extract number from filename like "clip_1.mp4"
+                    clip_num = int(file.split("_")[1].split(".")[0])
+                    clip_files.append((clip_num, file))
+                except (ValueError, IndexError):
+                    continue
+        
+        # Sort by clip number
+        clip_files.sort(key=lambda x: x[0])
+        
+        # Find first clip that hasn't been uploaded
+        for clip_num, filename in clip_files:
+            if filename not in uploaded_clips:
+                return filename, clip_num
+        
+        # If all clips have been uploaded, return None
+        return None, len(uploaded_clips) + 1
 
     def create_clips(self, mobile_format=True, clip_duration=57):
         """
@@ -397,8 +429,11 @@ class YouTubeAutomation:
 
         return response
 
-    def log_video(self, title):
-        log_file = "uploaded_videos.json"
+    def log_video(self, title, clip_filename=None):
+        log_file = f"web_app/backend/youtube_automation/logs/{self.account_name}_uploaded_videos.json"
+        
+        # Create directory if it doesn't exist
+        os.makedirs(os.path.dirname(log_file), exist_ok=True)
 
         # Cargar los datos existentes
         if os.path.exists(log_file):
@@ -408,8 +443,16 @@ class YouTubeAutomation:
         else:
             data = {"videos": []}
 
-        # Añadir el nuevo video
-        data["videos"].append({"title": title})
+        # Añadir el nuevo video con información del clip
+        video_entry = {
+            "title": title,
+            "upload_time": datetime.now().isoformat()
+        }
+        
+        if clip_filename:
+            video_entry["clip_file"] = clip_filename
+            
+        data["videos"].append(video_entry)
 
         # Guardar de nuevo en el archivo
         with open(log_file, 'w') as f:

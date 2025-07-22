@@ -6,19 +6,45 @@
                 "active": true,
                 "clip_folder": "youtube_automation/account_clips/LaughStorm",
                 "schedule": {
-                    "Monday": [],
-                    "Tuesday": [
-                        "17:31"
+                    "Monday": [
+                        "17:00",
+                        "20:00",
+                        "22:00"
                     ],
-                    "Wednesday": [],
-                    "Thursday": [],
-                    "Friday": [],
-                    "Saturday": [],
-                    "Sunday": []
+                    "Tuesday": [
+                        "17:00",
+                        "20:00",
+                        "22:00"
+                    ],
+                    "Wednesday": [
+                        "17:00",
+                        "20:00",
+                        "22:00"
+                    ],
+                    "Thursday": [
+                        "17:00",
+                        "20:00",
+                        "22:00"
+                    ],
+                    "Friday": [
+                        "17:00",
+                        "20:00",
+                        "22:00"
+                    ],
+                    "Saturday": [
+                        "16:00",
+                        "18:00",
+                        "21:00"
+                    ],
+                    "Sunday": [
+                        "16:00",
+                        "18:00",
+                        "21:00"
+                    ]
                 },
                 "authenticated": true,
-                "description": "dadada",
-                "tags": "",
+                "description": "Best funny moments of the day! \ud83e\udd23 New shorts daily \u2013 don\u2019t miss out. Like, comment, and subscribe for more!",
+                "tags": "shorts, shortvideo, youtubeshorts, viral, funny, comedy, laugh, meme, memes, lol, relatable, fails, fun, reaction, trynottolaugh, hilarious, trending, entertainment, dailyshorts, explore, humor, funnymoments, funnyvideos, laughoutloud, usacomedy, prank, compilation",
                 "title": "Dont laugh challenge",
                 "category_id": "23",
                 "clip_duration": 57

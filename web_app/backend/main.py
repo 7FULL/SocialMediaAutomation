@@ -226,6 +226,12 @@ async def lifespan(app: FastAPI):
     # Initialize scheduler service
     scheduler_service = SchedulerService(config_data)
     
+    # Start schedulers for platforms that have auto_upload enabled
+    for platform_name, platform_config in config_data.items():
+        if isinstance(platform_config, dict) and platform_config.get("auto_upload", False):
+            print(f"🔄 Auto-starting scheduler for {platform_name}")
+            await scheduler_service.start_platform_scheduler(platform_name)
+    
     # Create necessary directories
     os.makedirs("web_app/uploads", exist_ok=True)
     os.makedirs("web_app/logs", exist_ok=True)

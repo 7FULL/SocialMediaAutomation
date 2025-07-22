@@ -6,7 +6,7 @@ from typing import Optional
 # JWT Configuration
 SECRET_KEY = "your-secret-key-change-this-in-production"  # Change this in production
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 10080  # 7 days (7 * 24 * 60 minutes)
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     """Create a JWT access token"""

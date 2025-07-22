@@ -52,6 +52,7 @@ function PlatformDetail() {
   const [newTimeInputs, setNewTimeInputs] = useState({});
   const [schedulerStatus, setSchedulerStatus] = useState(null);
   const [nextUploads, setNextUploads] = useState({});
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   // Form states
   const [accountForm, setAccountForm] = useState({
@@ -89,7 +90,27 @@ function PlatformDetail() {
   useEffect(() => {
     loadAccounts();
     loadSchedulerInfo();
+
+    // Set up auto-refresh for scheduler info every 60 seconds
+    const schedulerRefreshInterval = setInterval(() => {
+      loadSchedulerInfo();
+    }, 60000); // 60 seconds
+
+    return () => {
+      clearInterval(schedulerRefreshInterval);
+    };
   }, [platformName]);
+
+  // useEffect for real-time countdown updates (every second)
+  useEffect(() => {
+    const countdownInterval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000); // Update every second
+
+    return () => {
+      clearInterval(countdownInterval);
+    };
+  }, []);
 
   const loadAccounts = async () => {
     try {
@@ -115,6 +136,31 @@ function PlatformDetail() {
       setNextUploads(uploadsData);
     } catch (error) {
       console.error('Error loading scheduler info:', error);
+    }
+  };
+
+  // Function to calculate time remaining locally
+  const calculateTimeRemaining = (nextUploadTime) => {
+    if (!nextUploadTime) return null;
+    
+    const now = new Date();
+    const diff = nextUploadTime - now;
+    
+    if (diff <= 0) return 'Ready to upload';
+    
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    
+    if (days > 0) {
+      return `${days}d ${hours}h ${minutes}m`;
+    } else if (hours > 0) {
+      return `${hours}h ${minutes}m ${seconds}s`;
+    } else if (minutes > 0) {
+      return `${minutes}m ${seconds}s`;
+    } else {
+      return `${seconds}s`;
     }
   };
 
@@ -396,45 +442,52 @@ function PlatformDetail() {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Object.entries(nextUploads).map(([accountName, uploadInfo]) => (
-                <div key={accountName} className={`p-4 rounded-lg border-2 ${
-                  uploadInfo.active 
-                    ? uploadInfo.time_remaining === 'Ready to upload' 
-                      ? 'border-orange-200 bg-orange-50'
-                      : 'border-green-200 bg-green-50'
-                    : 'border-gray-200 bg-gray-50'
-                }`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-gray-900">{accountName}</h4>
-                    <div className={`w-2 h-2 rounded-full ${
-                      uploadInfo.active 
-                        ? uploadInfo.time_remaining === 'Ready to upload'
-                          ? 'bg-orange-500'
-                          : 'bg-green-500'
-                        : 'bg-gray-400'
-                    }`}></div>
-                  </div>
-                  
-                  {uploadInfo.active ? (
-                    <>
-                      {uploadInfo.next_upload && (
-                        <p className="text-sm text-gray-600 mb-1">
-                          Next: {new Date(uploadInfo.next_upload).toLocaleString()}
+              {Object.entries(nextUploads).map(([accountName, uploadInfo]) => {
+                // Calculate real-time remaining time
+                const currentTimeRemaining = uploadInfo.next_upload 
+                  ? calculateTimeRemaining(new Date(uploadInfo.next_upload))
+                  : uploadInfo.time_remaining;
+                
+                return (
+                  <div key={accountName} className={`p-4 rounded-lg border-2 ${
+                    uploadInfo.active 
+                      ? currentTimeRemaining === 'Ready to upload' 
+                        ? 'border-orange-200 bg-orange-50'
+                        : 'border-green-200 bg-green-50'
+                      : 'border-gray-200 bg-gray-50'
+                  }`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-gray-900">{accountName}</h4>
+                      <div className={`w-2 h-2 rounded-full ${
+                        uploadInfo.active 
+                          ? currentTimeRemaining === 'Ready to upload'
+                            ? 'bg-orange-500'
+                            : 'bg-green-500'
+                          : 'bg-gray-400'
+                      }`}></div>
+                    </div>
+                    
+                    {uploadInfo.active ? (
+                      <>
+                        {uploadInfo.next_upload && (
+                          <p className="text-sm text-gray-600 mb-1">
+                            Next: {new Date(uploadInfo.next_upload).toLocaleString()}
+                          </p>
+                        )}
+                        <p className={`text-sm font-medium ${
+                          currentTimeRemaining === 'Ready to upload' 
+                            ? 'text-orange-600' 
+                            : 'text-green-600'
+                        }`}>
+                          {currentTimeRemaining || 'No schedule set'}
                         </p>
-                      )}
-                      <p className={`text-sm font-medium ${
-                        uploadInfo.time_remaining === 'Ready to upload' 
-                          ? 'text-orange-600' 
-                          : 'text-green-600'
-                      }`}>
-                        {uploadInfo.time_remaining || 'No schedule set'}
-                      </p>
-                    </>
-                  ) : (
-                    <p className="text-sm text-gray-500">Account inactive</p>
-                  )}
-                </div>
-              ))}
+                      </>
+                    ) : (
+                      <p className="text-sm text-gray-500">Account inactive</p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
             
             {Object.keys(nextUploads).length === 0 && (

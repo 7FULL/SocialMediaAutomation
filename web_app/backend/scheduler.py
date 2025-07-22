@@ -18,7 +18,6 @@ except ImportError:
 class SchedulerService:
     def __init__(self, config_data: Dict):
         self.config_data = config_data
-        self.schedulers = {}
         self.stop_events = {}
         self.scheduler_threads = {}
     
@@ -28,7 +27,10 @@ class SchedulerService:
         
     async def start_platform_scheduler(self, platform_name: str):
         """Start scheduler for a specific platform"""
-        if platform_name in self.schedulers:
+        print(f"DEBUG: Attempting to start scheduler for {platform_name}")
+        print(f"DEBUG: Current scheduler_threads: {list(self.scheduler_threads.keys())}")
+        
+        if platform_name in self.scheduler_threads:
             print(f"Scheduler already running for {platform_name}")
             return
         
@@ -149,10 +151,19 @@ class SchedulerService:
 
     def get_scheduler_status(self, platform_name: str) -> dict:
         """Get scheduler status for a platform"""
+        is_running = platform_name in self.scheduler_threads
+        auto_upload = self.config_data.get(platform_name, {}).get("auto_upload", False)
+        
+        print(f"DEBUG: Scheduler status for {platform_name}:")
+        print(f"  - scheduler_threads: {list(self.scheduler_threads.keys())}")
+        print(f"  - is_running: {is_running}")
+        print(f"  - auto_upload: {auto_upload}")
+        print(f"  - platform_name in threads: {platform_name in self.scheduler_threads}")
+        
         return {
             "platform_name": platform_name,
-            "is_running": platform_name in self.scheduler_threads,
-            "auto_upload": self.config_data.get(platform_name, {}).get("auto_upload", False)
+            "is_running": is_running,
+            "auto_upload": auto_upload
         }
     
     def get_next_upload_times(self, platform_name: str) -> dict:

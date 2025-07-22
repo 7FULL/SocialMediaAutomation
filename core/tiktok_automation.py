@@ -6,6 +6,15 @@ import json
 import shutil
 from moviepy.editor import VideoFileClip
 
+# PIL compatibility fix for newer versions
+try:
+    from PIL import Image
+    # Check if ANTIALIAS exists, if not, use LANCZOS
+    if not hasattr(Image, 'ANTIALIAS'):
+        Image.ANTIALIAS = Image.LANCZOS
+except ImportError:
+    pass
+
 
 class TikTokAutomation:
     def __init__(self, file_path="", output_path='output', account_name="", acc_data=None):

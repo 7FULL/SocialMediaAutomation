@@ -11,6 +11,15 @@ import json
 import shutil
 from moviepy.editor import VideoFileClip
 
+# PIL compatibility fix for newer versions
+try:
+    from PIL import Image
+    # Check if ANTIALIAS exists, if not, use LANCZOS
+    if not hasattr(Image, 'ANTIALIAS'):
+        Image.ANTIALIAS = Image.LANCZOS
+except ImportError:
+    pass
+
 # Import TikTok API components (will work when tiktok_api.py is available)
 try:
     from core.tiktok_api import TikTokAPI, authenticate_with_browser

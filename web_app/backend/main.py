@@ -890,6 +890,16 @@ async def generate_clips_from_file_task(task_id: str, file_path: str, output_fol
         active_tasks[task_id] = {"status": "processing", "progress": 20, "message": "Processing file..."}
         
         import shutil
+        
+        # PIL compatibility fix for newer versions
+        try:
+            from PIL import Image
+            # Check if ANTIALIAS exists, if not, use LANCZOS
+            if not hasattr(Image, 'ANTIALIAS'):
+                Image.ANTIALIAS = Image.LANCZOS
+        except ImportError:
+            pass
+            
         from moviepy.editor import VideoFileClip
         
         # Copy file to output folder

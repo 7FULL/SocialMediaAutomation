@@ -7,6 +7,15 @@ from moviepy.editor import VideoFileClip, AudioFileClip
 import os
 import re
 import json
+
+# PIL compatibility fix for newer versions
+try:
+    from PIL import Image
+    # Check if ANTIALIAS exists, if not, use LANCZOS
+    if not hasattr(Image, 'ANTIALIAS'):
+        Image.ANTIALIAS = Image.LANCZOS
+except ImportError:
+    pass
 import google_auth_oauthlib.flow
 import googleapiclient.discovery
 import googleapiclient.errors

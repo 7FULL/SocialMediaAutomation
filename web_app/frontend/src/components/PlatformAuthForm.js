@@ -2,12 +2,27 @@ import React, { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, Key, FileText, Eye, EyeOff, Info } from 'lucide-react';
 
-function PlatformAuthForm({ platform, onAuthDataChange }) {
+function PlatformAuthForm({ platform, onAuthDataChange, isReauth = false }) {
   const [showSecrets, setShowSecrets] = useState({});
   const [authData, setAuthData] = useState({});
+  const [useExistingCredentials, setUseExistingCredentials] = useState(false);
 
   const handleInputChange = (field, value) => {
-    const newAuthData = { ...authData, [field]: value };
+    const newAuthData = { 
+      ...authData, 
+      [field]: value,
+      use_existing_credentials: useExistingCredentials
+    };
+    setAuthData(newAuthData);
+    onAuthDataChange(newAuthData);
+  };
+
+  const handleUseExistingChange = (value) => {
+    setUseExistingCredentials(value);
+    const newAuthData = { 
+      ...authData, 
+      use_existing_credentials: value
+    };
     setAuthData(newAuthData);
     onAuthDataChange(newAuthData);
   };
@@ -58,33 +73,78 @@ function PlatformAuthForm({ platform, onAuthDataChange }) {
         </div>
       </div>
       
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Client Secrets File
-        </label>
-        <div
-          {...getRootProps()}
-          className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-            isDragActive 
-              ? 'border-blue-500 bg-blue-50' 
-              : 'border-gray-300 hover:border-gray-400'
-          }`}
-        >
-          <input {...getInputProps()} />
-          <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-          {authData.client_secrets_content ? (
-            <div>
-              <p className="text-sm text-green-600 font-medium">Client secrets file loaded ✓</p>
-              <p className="text-xs text-gray-500 mt-1">File contains the OAuth 2.0 credentials</p>
+      {isReauth && (
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="useExistingCredentials"
+              checked={useExistingCredentials}
+              onChange={(e) => handleUseExistingChange(e.target.checked)}
+              className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded mr-3"
+            />
+            <div className="flex-1">
+              <label htmlFor="useExistingCredentials" className="font-medium text-orange-900">
+                Use existing OAuth credentials
+              </label>
+              <p className="text-sm text-orange-700 mt-1">
+                Re-authenticate using the previously uploaded client secrets file. 
+                Leave unchecked if you want to upload new credentials.
+              </p>
             </div>
-          ) : (
-            <div>
-              <p className="text-sm text-gray-600">Drop client secrets JSON file here or click to select</p>
-              <p className="text-xs text-gray-500 mt-1">Must be a valid Google OAuth 2.0 client secrets file</p>
-            </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
+      
+      {!useExistingCredentials && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Client Secrets File
+          </label>
+          <div
+            {...getRootProps()}
+            className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+              isDragActive 
+                ? 'border-blue-500 bg-blue-50' 
+                : 'border-gray-300 hover:border-gray-400'
+            }`}
+          >
+            <input {...getInputProps()} />
+            <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+            {authData.client_secrets_content ? (
+              <div>
+                <p className="text-sm text-green-600 font-medium">Client secrets file loaded ✓</p>
+                <p className="text-xs text-gray-500 mt-1">File contains the OAuth 2.0 credentials</p>
+              </div>
+            ) : (
+              <div>
+                <p className="text-sm text-gray-600">Drop client secrets JSON file here or click to select</p>
+                <p className="text-xs text-gray-500 mt-1">Must be a valid Google OAuth 2.0 client secrets file</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      
+      {useExistingCredentials && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-green-600" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium text-green-900">
+                Will use existing OAuth credentials
+              </p>
+              <p className="text-sm text-green-700 mt-1">
+                The system will attempt to re-authenticate using the previously saved client secrets file.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 

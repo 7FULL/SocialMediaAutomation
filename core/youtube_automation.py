@@ -71,13 +71,20 @@ class YouTubeAutomation:
         else:
             print("Video or audio file is missing. Please download both before combining.")
 
-    def download_and_combine(self, create_clips=False, upload_short=False):
+    def download_and_combine(self, create_clips=False, upload_short=False, mobile_format=True):
+        """
+        Descarga video, audio y los combina. Opcionalmente crea clips y sube shorts.
+        Args:
+            create_clips (bool): Si True, crea clips del video
+            upload_short (bool): Si True, sube el video como short
+            mobile_format (bool): Si True, los clips se crean en formato vertical móvil
+        """
         self.download_video()
         self.download_audio()
         self.combine_video_audio()
 
         if create_clips:
-            self.create_clips()
+            self.create_clips(mobile_format=mobile_format)
 
         if upload_short:
             self.upload_and_log_short()
@@ -89,7 +96,8 @@ class YouTubeAutomation:
             print("No se pudo autenticar con la cuenta de YouTube")
             return
         else:
-            token_file = f"youtube_automation/account_tokens/token_{self.account_name}.pickle"
+            project_root = os.path.dirname(os.path.dirname(__file__))
+            token_file = os.path.join(project_root, "web_app/backend/youtube_automation/account_tokens", f"token_{self.account_name}.pickle")
 
             if os.path.exists(token_file):
                 with open(token_file, 'rb') as token_file_obj:
@@ -136,7 +144,13 @@ class YouTubeAutomation:
             os.makedirs(os.path.dirname(log_file), exist_ok=True)
         return 1  # Si no existe, empezar desde 1
 
-    def create_clips(self):
+    def create_clips(self, mobile_format=True, clip_duration=57):
+        """
+        Crea clips del video descargado
+        Args:
+            mobile_format (bool): Si True, convierte a formato vertical móvil (9:16)
+            clip_duration (int): Duración de cada clip en segundos
+        """
         video_path = self.final_output_path
 
         # Si se descargó el video, proceder a crear los clips
@@ -145,7 +159,9 @@ class YouTubeAutomation:
             video = VideoFileClip(video_path)
 
             # Definir la duración del clip en segundos
-            clip_duration = 57  # Duración de cada clip
+            print(f"Creando clips de {clip_duration} segundos cada uno")
+            if mobile_format:
+                print("Formato móvil activado - los clips se convertirán a 9:16")
             total_duration = int(video.duration)  # Duración total del video
 
             # Crear clips en un bucle
@@ -160,6 +176,10 @@ class YouTubeAutomation:
                     break
 
                 clip = video.subclip(start, end)
+                
+                # Convertir a formato vertical móvil (9:16) si está habilitado
+                if mobile_format:
+                    clip = self.convert_to_mobile_format(clip)
 
                 path = ""
 
@@ -171,12 +191,108 @@ class YouTubeAutomation:
 
                 path = os.path.join("clips", f"clip_{number}.mp4")
 
-                clip.write_videofile(path, codec='libx264')
+                clip.write_videofile(path, codec='libx264', audio_codec='aac')
 
             # Cerrar el objeto de video
             video.close()
         else:
             print("No se pudo descargar el video.")
+
+    def convert_to_mobile_format(self, clip, crop_position='center'):
+        """
+        Convierte un clip a formato vertical móvil (9:16 aspect ratio)
+        Recorta inteligentemente el video para que se vea bien en móviles
+        Args:
+            clip: El clip de video a convertir
+            crop_position: Posición del recorte ('center', 'top', 'bottom', 'left', 'right')
+        """
+        # Dimensiones objetivo para móvil (9:16) - YouTube Shorts optimizado
+        target_width = 1080
+        target_height = 1920
+        target_ratio = target_height / target_width  # 1.778 aproximadamente
+        
+        # Obtener dimensiones actuales del clip
+        current_width = clip.w
+        current_height = clip.h
+        current_ratio = current_height / current_width
+        
+        print(f"Video original: {current_width}x{current_height} (ratio: {current_ratio:.2f})")
+        print(f"Formato móvil objetivo: {target_width}x{target_height} (ratio: {target_ratio:.2f})")
+        
+        if current_ratio < target_ratio:
+            # El video es más ancho que el formato móvil - recortar horizontalmente
+            # Calcular nueva anchura manteniendo la altura
+            new_width = int(current_height / target_ratio)
+            
+            # Determinar posición de recorte horizontal
+            if crop_position == 'left':
+                x_start = 0
+            elif crop_position == 'right':
+                x_start = current_width - new_width
+            else:  # center por defecto
+                x_center = current_width / 2
+                x_start = int(x_center - new_width / 2)
+            
+            x_start = max(0, x_start)
+            x_end = min(current_width, x_start + new_width)
+            
+            # Recortar el video
+            clip = clip.crop(x1=x_start, x2=x_end)
+            print(f"Recortado horizontalmente ({crop_position}): {new_width}x{current_height}")
+            
+        elif current_ratio > target_ratio:
+            # El video es más alto que el formato móvil - recortar verticalmente
+            # Calcular nueva altura manteniendo la anchura
+            new_height = int(current_width * target_ratio)
+            
+            # Determinar posición de recorte vertical
+            if crop_position == 'top':
+                y_start = 0
+            elif crop_position == 'bottom':
+                y_start = current_height - new_height
+            else:  # center por defecto, con ligero sesgo hacia arriba para mejor encuadre
+                y_center = current_height / 2
+                y_offset = current_height * 0.05  # 5% hacia arriba para mejor composición
+                y_start = int(y_center - new_height / 2 - y_offset)
+            
+            y_start = max(0, y_start)
+            y_end = min(current_height, y_start + new_height)
+            
+            # Recortar el video
+            clip = clip.crop(y1=y_start, y2=y_end)
+            print(f"Recortado verticalmente ({crop_position}): {current_width}x{new_height}")
+        
+        # Redimensionar al tamaño exacto para móvil con algoritmo de alta calidad
+        clip = clip.resize((target_width, target_height))
+        print(f"Redimensionado a: {target_width}x{target_height}")
+        
+        # Aplicar filtros para mejorar calidad en móvil
+        # Aumentar ligeramente la saturación para que se vea mejor en pantallas móviles
+        try:
+            # Solo aplicar si moviepy lo soporta
+            clip = clip.fx(lambda gf, t: gf(t).multiply_brightness(1.02).multiply_saturation(1.1))
+        except:
+            pass  # Si hay error, continuar sin filtros
+        
+        return clip
+    
+    def get_platform_dimensions(self, platform='youtube_shorts'):
+        """
+        Obtiene las dimensiones optimizadas para diferentes plataformas
+        Args:
+            platform: 'youtube_shorts', 'tiktok', 'instagram_reels', 'youtube_standard'
+        Returns:
+            tuple: (width, height)
+        """
+        dimensions = {
+            'youtube_shorts': (1080, 1920),    # 9:16 - Óptimo para YouTube Shorts
+            'tiktok': (1080, 1920),           # 9:16 - TikTok estándar
+            'instagram_reels': (1080, 1920),   # 9:16 - Instagram Reels
+            'instagram_story': (1080, 1920),   # 9:16 - Instagram Stories
+            'youtube_standard': (1920, 1080),  # 16:9 - YouTube estándar
+            'square': (1080, 1080),           # 1:1 - Instagram post
+        }
+        return dimensions.get(platform, (1080, 1920))
 
     @staticmethod
     def authenticate_youtube_account(account_name, scopes=None):
@@ -186,8 +302,10 @@ class YouTubeAutomation:
         """
         if scopes is None:
             scopes = ["https://www.googleapis.com/auth/youtube.upload"]
-        token_file = f"youtube_automation/account_tokens/token_{account_name}.pickle"
-        secrets_file = f"youtube_automation/account_secrets/client_secrets_{account_name}.json"
+        # Get the project root directory (where core/ and web_app/ are located)
+        project_root = os.path.dirname(os.path.dirname(__file__))
+        token_file = os.path.join(project_root, "web_app/backend/youtube_automation/account_tokens", f"token_{account_name}.pickle")
+        secrets_file = os.path.join(project_root, "web_app/backend/youtube_automation/account_secrets", f"client_secrets_{account_name}.json")
 
         creds = None
 

@@ -30,7 +30,8 @@ function PlatformDetail() {
     getAccounts, 
     createAccount, 
     updateAccount, 
-    deleteAccount, 
+    deleteAccount,
+    reauthenticateAccount,
     generateClipsFromUrl,
     generateClipsFromFile,
     uploadContent,
@@ -41,9 +42,12 @@ function PlatformDetail() {
   const [loading, setLoading] = useState(true);
   const [showAddAccount, setShowAddAccount] = useState(false);
   const [showAccountEditor, setShowAccountEditor] = useState(false);
+  const [showReauth, setShowReauth] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [showContentGenerator, setShowContentGenerator] = useState(false);
   const [activeTasks, setActiveTasks] = useState({});
+  const [isGeneratingClips, setIsGeneratingClips] = useState(false);
+  const [newTimeInputs, setNewTimeInputs] = useState({});
 
   // Form states
   const [accountForm, setAccountForm] = useState({
@@ -64,10 +68,12 @@ function PlatformDetail() {
   const [contentForm, setContentForm] = useState({
     url: '',
     file: null,
-    type: 'url' // 'url' or 'file'
+    type: 'url', // 'url' or 'file'
+    mobileFormat: true
   });
 
   const [authData, setAuthData] = useState({});
+  const [reauthData, setReauthData] = useState({});
 
   const platformIcons = {
     'YouTube': '🎥',
@@ -151,26 +157,49 @@ function PlatformDetail() {
     }
   };
 
+  const handleReauthenticate = async () => {
+    try {
+      const response = await reauthenticateAccount(platformName, selectedAccount.name, reauthData);
+      
+      if (response.success && response.authenticated) {
+        toast.success(`Account re-authenticated successfully! ${response.auth_message}`);
+      } else {
+        toast.error(`Re-authentication failed: ${response.auth_message}`);
+      }
+      
+      setShowReauth(false);
+      setSelectedAccount(null);
+      setReauthData({});
+      loadAccounts();
+    } catch (error) {
+      toast.error('Failed to re-authenticate account');
+    }
+  };
+
   const handleGenerateContent = async () => {
     try {
+      setIsGeneratingClips(true);
+      
       let response;
       if (contentForm.type === 'url') {
-        response = await generateClipsFromUrl(platformName, selectedAccount.name, contentForm.url);
+        response = await generateClipsFromUrl(platformName, selectedAccount.name, contentForm.url, contentForm.mobileFormat);
       } else {
-        response = await generateClipsFromFile(platformName, selectedAccount.name, contentForm.file);
+        response = await generateClipsFromFile(platformName, selectedAccount.name, contentForm.file, contentForm.mobileFormat);
       }
       
       const taskId = response.task_id;
       setActiveTasks(prev => ({ ...prev, [taskId]: { status: 'processing', progress: 0 } }));
       
-      toast.success('Content generation started!');
+      const formatType = contentForm.mobileFormat ? 'mobile (9:16)' : 'original';
+      toast.success(`Clip generation started in ${formatType} format! This may take a few minutes...`);
       setShowContentGenerator(false);
-      setContentForm({ url: '', file: null, type: 'url' });
+      setContentForm({ url: '', file: null, type: 'url', mobileFormat: true });
       
       // Poll for task status
       pollTaskStatus(taskId);
     } catch (error) {
       toast.error('Failed to start content generation');
+      setIsGeneratingClips(false);
     }
   };
 
@@ -196,11 +225,25 @@ function PlatformDetail() {
         setActiveTasks(prev => ({ ...prev, [taskId]: status }));
         
         if (status.status === 'completed') {
-          toast.success(status.message);
+          toast.success(status.message || 'Clips generated successfully!');
           clearInterval(pollInterval);
+          setActiveTasks(prev => {
+            const newTasks = { ...prev };
+            delete newTasks[taskId];
+            return newTasks;
+          });
+          setIsGeneratingClips(false);
+          // Refresh accounts to update clips count
+          loadAccounts();
         } else if (status.status === 'failed') {
-          toast.error(status.message);
+          toast.error(status.message || 'Task failed');
           clearInterval(pollInterval);
+          setActiveTasks(prev => {
+            const newTasks = { ...prev };
+            delete newTasks[taskId];
+            return newTasks;
+          });
+          setIsGeneratingClips(false);
         }
       } catch (error) {
         clearInterval(pollInterval);
@@ -223,6 +266,18 @@ function PlatformDetail() {
         ...prev,
         [day]: [...prev[day], time].sort()
       }));
+      // Clear the input after adding
+      setNewTimeInputs(prev => ({
+        ...prev,
+        [day]: ''
+      }));
+    }
+  };
+  
+  const handleAddTime = (day) => {
+    const time = newTimeInputs[day];
+    if (time) {
+      addScheduleTime(day, time);
     }
   };
 
@@ -332,7 +387,67 @@ function PlatformDetail() {
                       }`}>
                         {account.authenticated ? 'Authenticated' : 'Not Authenticated'}
                       </span>
+                      
+                      {/* Content Status Badge */}
+                      {account.clips_stats && account.clips_stats.clips_per_week > 0 && (
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          account.clips_stats.status === 'healthy' ? 'bg-green-100 text-green-700' :
+                          account.clips_stats.status === 'low' ? 'bg-yellow-100 text-yellow-700' : 
+                          'bg-red-100 text-red-700'
+                        }`}>
+                          {account.clips_stats.status === 'healthy' ? 'Content Ready' :
+                           account.clips_stats.status === 'low' ? 'Low Content' : 'Critical'}
+                        </span>
+                      )}
                     </div>
+                    
+                    {/* Clips Statistics */}
+                    {account.clips_stats && (
+                      <div className="flex items-center space-x-4 mt-2 text-sm" title="Content availability statistics based on upload schedule">
+                        <div className="flex items-center space-x-1">
+                          <FileVideo className="h-4 w-4 text-gray-500" />
+                          <span className="text-gray-700">
+                            <span className="font-medium">{account.clips_stats.available_clips}</span> clips available
+                          </span>
+                        </div>
+                        
+                        {account.clips_stats.clips_per_week > 0 && (
+                          <>
+                            <div className="text-gray-400">•</div>
+                            <div className="flex items-center space-x-1">
+                              <Calendar className="h-4 w-4 text-gray-500" />
+                              <span className="text-gray-700">
+                                <span className="font-medium">{account.clips_stats.clips_per_week}</span> needed/week
+                              </span>
+                            </div>
+                            
+                            <div className="text-gray-400">•</div>
+                            <div className="flex items-center space-x-2">
+                              <Clock className="h-4 w-4 text-gray-500" />
+                              <span className={`font-medium ${
+                                account.clips_stats.status === 'healthy' ? 'text-green-600' :
+                                account.clips_stats.status === 'low' ? 'text-yellow-600' : 'text-red-600'
+                              }`}>
+                                {account.clips_stats.weeks_of_content} weeks
+                              </span>
+                              
+                              {/* Progress Bar */}
+                              <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div 
+                                  className={`h-full transition-all duration-300 ${
+                                    account.clips_stats.status === 'healthy' ? 'bg-green-500' :
+                                    account.clips_stats.status === 'low' ? 'bg-yellow-500' : 'bg-red-500'
+                                  }`}
+                                  style={{
+                                    width: `${Math.min(100, (account.clips_stats.weeks_of_content / 4) * 100)}%`
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
                   
                   <div className="flex items-center space-x-2">
@@ -361,6 +476,18 @@ function PlatformDetail() {
                     >
                       <Edit className="h-4 w-4 mr-1" />
                       Edit
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setSelectedAccount(account);
+                        setReauthData({});
+                        setShowReauth(true);
+                      }}
+                      className="flex items-center px-3 py-1 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors text-sm"
+                    >
+                      <RefreshCw className="h-4 w-4 mr-1" />
+                      Re-auth
                     </button>
                     
                     <button
@@ -606,6 +733,27 @@ function PlatformDetail() {
               )}
             </div>
             
+            {/* Mobile Format Options */}
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-start space-x-3">
+                <input
+                  type="checkbox"
+                  id="mobileFormat"
+                  checked={contentForm.mobileFormat}
+                  onChange={(e) => setContentForm(prev => ({ ...prev, mobileFormat: e.target.checked }))}
+                  className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <div className="flex-1">
+                  <label htmlFor="mobileFormat" className="block text-sm font-medium text-gray-900">
+                    Create mobile-optimized clips (9:16)
+                  </label>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Perfect for YouTube Shorts, TikTok, and Instagram Reels. Clips will be automatically cropped and resized to vertical format.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
             <div className="flex justify-end space-x-3 mt-6">
               <button
                 onClick={() => setShowContentGenerator(false)}
@@ -615,10 +763,229 @@ function PlatformDetail() {
               </button>
               <button
                 onClick={handleGenerateContent}
-                disabled={contentForm.type === 'url' ? !contentForm.url : !contentForm.file}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                disabled={(contentForm.type === 'url' ? !contentForm.url : !contentForm.file) || isGeneratingClips}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center"
               >
-                Generate Clips
+                {isGeneratingClips && (
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                )}
+                {isGeneratingClips ? 'Generating Clips...' : 'Generate Clips'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Account Editor Modal */}
+      {showAccountEditor && selectedAccount && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-900">
+                  Edit Account: {selectedAccount.name}
+                </h2>
+                <button
+                  onClick={() => setShowAccountEditor(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              {/* Account Details */}
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Account Name
+                  </label>
+                  <input
+                    type="text"
+                    value={selectedAccount.name}
+                    onChange={(e) => setSelectedAccount({...selectedAccount, name: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    value={selectedAccount.description || ''}
+                    onChange={(e) => setSelectedAccount({...selectedAccount, description: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows="3"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tags
+                    </label>
+                    <input
+                      type="text"
+                      value={selectedAccount.tags || ''}
+                      onChange={(e) => setSelectedAccount({...selectedAccount, tags: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="comedy, entertainment, viral"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Clip Duration (seconds)
+                    </label>
+                    <input
+                      type="number"
+                      min="30"
+                      max="60"
+                      value={selectedAccount.clip_duration || 57}
+                      onChange={(e) => setSelectedAccount({...selectedAccount, clip_duration: parseInt(e.target.value)})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={selectedAccount.active}
+                    onChange={(e) => setSelectedAccount({...selectedAccount, active: e.target.checked})}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label className="ml-2 block text-sm text-gray-900">
+                    Account Active
+                  </label>
+                </div>
+              </div>
+
+              {/* Schedule Section */}
+              <div className="border-t pt-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Upload Schedule</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {Object.keys(scheduleForm).map(day => (
+                    <div key={day} className="p-4 border border-gray-200 rounded-lg">
+                      <h4 className="font-medium text-gray-900 mb-2">{day}</h4>
+                      <div className="space-y-2">
+                        {scheduleForm[day].map((time, index) => (
+                          <div key={index} className="flex items-center justify-between bg-gray-50 px-2 py-1 rounded">
+                            <span className="text-sm">{time}</span>
+                            <button
+                              onClick={() => removeScheduleTime(day, time)}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ))}
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="time"
+                            value={newTimeInputs[day] || ''}
+                            onChange={(e) => setNewTimeInputs(prev => ({...prev, [day]: e.target.value}))}
+                            className="text-sm border border-gray-300 rounded px-2 py-1 flex-1"
+                            placeholder="Select time"
+                          />
+                          <button
+                            onClick={() => handleAddTime(day)}
+                            disabled={!newTimeInputs[day]}
+                            className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Add
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-3 mt-6 pt-6 border-t">
+                <button
+                  onClick={() => setShowAccountEditor(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleUpdateAccount}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Re-authentication Modal */}
+      {showReauth && selectedAccount && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold">Re-authenticate {platformName} Account</h3>
+              <button
+                onClick={() => {
+                  setShowReauth(false);
+                  setReauthData({});
+                  setSelectedAccount(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center">
+                <RefreshCw className="h-5 w-5 text-blue-500 mr-2" />
+                <div>
+                  <p className="font-medium text-blue-900">Re-authenticate: {selectedAccount.name}</p>
+                  <p className="text-sm text-blue-700 mt-1">
+                    Update the authentication credentials for this account. This will not change any other account settings.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-6">
+              {/* Platform-specific Authentication */}
+              <div>
+                <PlatformAuthForm 
+                  platform={platformName} 
+                  onAuthDataChange={setReauthData}
+                  isReauth={true}
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3 mt-8 pt-6 border-t">
+              <button
+                onClick={() => {
+                  setShowReauth(false);
+                  setReauthData({});
+                  setSelectedAccount(null);
+                }}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleReauthenticate}
+                disabled={
+                  (platformName === 'YouTube' && !reauthData.use_existing_credentials && !reauthData.client_secrets_content) || 
+                  (platformName === 'TikTok' && (!reauthData.client_key || !reauthData.client_secret)) ||
+                  (platformName === 'Instagram' && !reauthData.access_token) ||
+                  (platformName === 'Twitter' && (!reauthData.api_key || !reauthData.api_secret || !reauthData.access_token_key || !reauthData.access_token_secret))
+                }
+                className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Re-authenticate Account
               </button>
             </div>
           </div>

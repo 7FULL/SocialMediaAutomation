@@ -16,6 +16,12 @@ class PlatformInfo(BaseModel):
     active: bool
     account_count: int
 
+class ClipsStats(BaseModel):
+    available_clips: int
+    clips_per_week: int
+    weeks_of_content: float
+    status: str  # "healthy", "low", "critical"
+
 class AccountInfo(BaseModel):
     name: str
     active: bool
@@ -27,6 +33,7 @@ class AccountInfo(BaseModel):
     category_id: str
     clip_duration: int
     schedule: Dict[str, List[str]]
+    clips_stats: ClipsStats
 
 class CreateAccountRequest(BaseModel):
     name: str
@@ -36,6 +43,8 @@ class CreateAccountRequest(BaseModel):
     title: Optional[str] = None
     category_id: Optional[str] = None
     clip_duration: Optional[int] = 57
+    # Re-authentication options
+    use_existing_credentials: bool = False
     # YouTube specific
     client_secrets_content: Optional[str] = None
     # TikTok specific
@@ -60,6 +69,7 @@ class UpdateAccountRequest(BaseModel):
 
 class GenerateClipsFromUrlRequest(BaseModel):
     url: str
+    mobile_format: bool = True
 
 class TaskStatus(BaseModel):
     task_id: str
@@ -72,3 +82,9 @@ class DashboardStats(BaseModel):
     active_accounts: int
     platforms_active: int
     total_platforms: int
+
+class ReauthResponse(BaseModel):
+    success: bool
+    authenticated: bool
+    auth_message: str
+    message: str

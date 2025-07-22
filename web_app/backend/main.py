@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, UploadFile, File
+from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, UploadFile, File, Form
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -34,15 +34,38 @@ except ImportError:
         print("Warning: TikTok automation not available")
         TikTokAutomation = None
 
-try:
-    from utils import load_config, save_config
-except ImportError:
-    # Fallback implementation
-    def load_config():
+import json
+
+def load_config():
+    """Load configuration from config.json"""
+    try:
+        config_path = "config/config.json"
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as f:
+                return json.load(f)
+        else:
+            # Create default config if not exists
+            default_config = {
+                "YouTube": {"accounts": {}, "auto_upload": False},
+                "TikTok": {"accounts": {}, "auto_upload": False},
+                "Instagram": {"accounts": {}, "auto_upload": False},
+                "Twitter": {"accounts": {}, "auto_upload": False}
+            }
+            save_config(default_config)
+            return default_config
+    except Exception as e:
+        print(f"Error loading config: {e}")
         return {}
-    
-    def save_config(config):
-        pass
+
+def save_config(config):
+    """Save configuration to config.json"""
+    try:
+        config_path = "config/config.json"
+        os.makedirs(os.path.dirname(config_path), exist_ok=True)
+        with open(config_path, 'w') as f:
+            json.dump(config, f, indent=4)
+    except Exception as e:
+        print(f"Error saving config: {e}")
 
 from models import *
 from auth import verify_token, create_access_token
@@ -50,26 +73,33 @@ from scheduler import SchedulerService
 from settings_manager import SettingsManager, BackupManager, NotificationManager, PerformanceMonitor, SecurityManager
 
 # Platform-specific authentication functions
-async def handle_youtube_authentication(account: CreateAccountRequest):
+async def handle_youtube_authentication(account: CreateAccountRequest, use_existing_secrets=False):
     """Handle YouTube authentication with client secrets"""
     try:
-        if not account.client_secrets_content:
-            return False, "Client secrets file content is required for YouTube"
-        
-        # Create account secrets directory
         secrets_dir = f"youtube_automation/account_secrets"
-        os.makedirs(secrets_dir, exist_ok=True)
-        
-        # Save client secrets file
         secrets_file = f"{secrets_dir}/client_secrets_{account.name}.json"
-        with open(secrets_file, 'w') as f:
-            f.write(account.client_secrets_content)
+        
+        if use_existing_secrets:
+            # Try to use existing secrets file
+            if not os.path.exists(secrets_file):
+                return False, "No existing OAuth credentials found for this account. Please upload new credentials."
+        else:
+            # Require new client secrets content
+            if not account.client_secrets_content:
+                return False, "Client secrets file content is required for YouTube"
+            
+            # Create account secrets directory
+            os.makedirs(secrets_dir, exist_ok=True)
+            
+            # Save client secrets file
+            with open(secrets_file, 'w') as f:
+                f.write(account.client_secrets_content)
         
         # Authenticate with YouTube
         if YouTubeAutomation:
             authenticated = YouTubeAutomation.authenticate_youtube_account(account.name)
             if authenticated:
-                return True, "YouTube authentication successful"
+                return True, "YouTube authentication successful using " + ("existing" if use_existing_secrets else "new") + " credentials"
             else:
                 return False, "YouTube authentication failed - check credentials"
         else:
@@ -329,6 +359,38 @@ async def toggle_platform_auto_upload(
     
     return {"message": f"Auto-upload {'enabled' if not current_status else 'disabled'} for {platform_name}"}
 
+def count_clips_in_folder(folder_path: str) -> int:
+    """Count video clips in a folder"""
+    if not os.path.exists(folder_path):
+        return 0
+    
+    clips_folder = os.path.join(folder_path, "clips")
+    if not os.path.exists(clips_folder):
+        return 0
+    
+    video_extensions = {'.mp4', '.avi', '.mov', '.mkv', '.wmv', '.flv'}
+    clip_count = 0
+    
+    try:
+        for file in os.listdir(clips_folder):
+            if os.path.splitext(file.lower())[1] in video_extensions:
+                clip_count += 1
+    except Exception as e:
+        print(f"Error counting clips in {clips_folder}: {e}")
+        return 0
+    
+    return clip_count
+
+def calculate_clips_needed_per_week(schedule: dict) -> int:
+    """Calculate how many clips are needed per week based on schedule"""
+    total_uploads_per_week = 0
+    
+    for day, times in schedule.items():
+        if isinstance(times, list):
+            total_uploads_per_week += len(times)
+    
+    return total_uploads_per_week
+
 # Account management endpoints
 @app.get("/api/platforms/{platform_name}/accounts", response_model=List[AccountInfo])
 async def get_accounts(
@@ -343,17 +405,44 @@ async def get_accounts(
     
     account_list = []
     for name, data in accounts.items():
+        # Count available clips
+        clip_folder = data.get("clip_folder", "")
+        available_clips = count_clips_in_folder(clip_folder)
+        
+        # Calculate clips needed per week
+        schedule = data.get("schedule", {})
+        clips_per_week = calculate_clips_needed_per_week(schedule)
+        
+        # Calculate how many weeks of content we have
+        weeks_of_content = available_clips / clips_per_week if clips_per_week > 0 else 0
+        
+        # Determine status
+        if weeks_of_content >= 2:
+            status = "healthy"
+        elif weeks_of_content >= 1:
+            status = "low"
+        else:
+            status = "critical"
+        
+        clips_stats = ClipsStats(
+            available_clips=available_clips,
+            clips_per_week=clips_per_week,
+            weeks_of_content=round(weeks_of_content, 1),
+            status=status
+        )
+        
         account_list.append(AccountInfo(
             name=name,
             active=data.get("active", True),
             authenticated=data.get("authenticated", False),
-            clip_folder=data.get("clip_folder", ""),
+            clip_folder=clip_folder,
             description=data.get("description", ""),
             tags=data.get("tags", ""),
             title=data.get("title", ""),
             category_id=data.get("category_id", ""),
             clip_duration=data.get("clip_duration", 57),
-            schedule=data.get("schedule", {})
+            schedule=schedule,
+            clips_stats=clips_stats
         ))
     
     return account_list
@@ -376,7 +465,7 @@ async def create_account(
     
     try:
         if platform_name == "YouTube":
-            authenticated, auth_message = await handle_youtube_authentication(account)
+            authenticated, auth_message = await handle_youtube_authentication(account, False)
         elif platform_name == "TikTok":
             authenticated, auth_message = await handle_tiktok_authentication(account)
         elif platform_name == "Instagram":
@@ -508,7 +597,8 @@ async def generate_clips_from_url(
         task_id,
         request.url,
         account_data["clip_folder"],
-        account_data.get("clip_duration", 57)
+        account_data.get("clip_duration", 57),
+        request.mobile_format
     )
     
     active_tasks[task_id] = {"status": "processing", "progress": 0, "message": "Starting..."}
@@ -521,6 +611,7 @@ async def generate_clips_from_file(
     account_name: str,
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
+    mobile_format: bool = Form(True),
     token: HTTPAuthorizationCredentials = Depends(security)
 ):
     """Generate clips from an uploaded file"""
@@ -544,7 +635,8 @@ async def generate_clips_from_file(
         task_id,
         upload_path,
         account_data["clip_folder"],
-        account_data.get("clip_duration", 57)
+        account_data.get("clip_duration", 57),
+        mobile_format
     )
     
     active_tasks[task_id] = {"status": "processing", "progress": 0, "message": "Starting..."}
@@ -594,6 +686,84 @@ async def upload_content(
     
     return {"task_id": task_id, "message": "Upload started"}
 
+# Re-authentication endpoint
+@app.post("/api/platforms/{platform_name}/accounts/{account_name}/reauth", response_model=ReauthResponse)
+async def reauthenticate_account(
+    platform_name: str,
+    account_name: str,
+    request: CreateAccountRequest,
+    token: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Re-authenticate an existing account"""
+    verify_token(token.credentials)
+    
+    config_data = load_config()
+    
+    if platform_name not in config_data:
+        raise HTTPException(status_code=404, detail="Platform not found")
+    
+    if account_name not in config_data[platform_name]["accounts"]:
+        raise HTTPException(status_code=404, detail="Account not found")
+    
+    # Get current account data
+    account_data = config_data[platform_name]["accounts"][account_name]
+    
+    # Update the request with the account name to match existing account
+    request.name = account_name
+    
+    # Handle platform-specific authentication
+    authenticated = False
+    auth_message = ""
+    
+    try:
+        if platform_name == "YouTube":
+            authenticated, auth_message = await handle_youtube_authentication(request, request.use_existing_credentials)
+        elif platform_name == "TikTok":
+            authenticated, auth_message = await handle_tiktok_authentication(request)
+        elif platform_name == "Instagram":
+            authenticated, auth_message = await handle_instagram_authentication(request)
+        elif platform_name == "Twitter":
+            authenticated, auth_message = await handle_twitter_authentication(request)
+        else:
+            raise HTTPException(status_code=400, detail=f"Unsupported platform: {platform_name}")
+        
+        # Update authentication status in config
+        account_data["authenticated"] = authenticated
+        
+        # Update platform-specific auth data if provided
+        if platform_name == "YouTube" and request.client_secrets_content:
+            account_data["client_secrets_content"] = request.client_secrets_content
+        elif platform_name == "TikTok" and request.client_key and request.client_secret:
+            account_data["client_key"] = request.client_key
+            account_data["client_secret"] = request.client_secret
+        elif platform_name == "Instagram" and request.access_token:
+            account_data["access_token"] = request.access_token
+        elif platform_name == "Twitter" and all([request.api_key, request.api_secret, request.access_token_key, request.access_token_secret]):
+            account_data.update({
+                "api_key": request.api_key,
+                "api_secret": request.api_secret,
+                "access_token_key": request.access_token_key,
+                "access_token_secret": request.access_token_secret
+            })
+        
+        save_config(config_data)
+        
+        return {
+            "success": True,
+            "authenticated": authenticated,
+            "auth_message": auth_message,
+            "message": f"Re-authentication {'successful' if authenticated else 'failed'}"
+        }
+        
+    except Exception as e:
+        print(f"Re-authentication error for {platform_name}/{account_name}: {str(e)}")
+        return {
+            "success": False,
+            "authenticated": False,
+            "auth_message": f"Re-authentication failed: {str(e)}",
+            "message": "Re-authentication failed"
+        }
+
 # Dashboard endpoints
 @app.get("/api/dashboard/stats")
 async def get_dashboard_stats(token: HTTPAuthorizationCredentials = Depends(security)):
@@ -620,8 +790,67 @@ async def get_dashboard_stats(token: HTTPAuthorizationCredentials = Depends(secu
         "total_platforms": 4
     }
 
+def convert_clip_to_mobile_format(clip, crop_position='center'):
+    """
+    Converts a clip to mobile format (9:16 aspect ratio)
+    Args:
+        clip: MoviePy VideoFileClip object
+        crop_position: Position of cropping ('center', 'top', 'bottom')
+    Returns:
+        Converted clip optimized for mobile
+    """
+    # Target dimensions for mobile (9:16) - YouTube Shorts optimized
+    target_width = 1080
+    target_height = 1920
+    target_ratio = target_height / target_width
+    
+    # Get current dimensions
+    current_width = clip.w
+    current_height = clip.h
+    current_ratio = current_height / current_width
+    
+    if current_ratio < target_ratio:
+        # Video is wider than mobile format - crop horizontally
+        new_width = int(current_height / target_ratio)
+        
+        if crop_position == 'left':
+            x_start = 0
+        elif crop_position == 'right':
+            x_start = current_width - new_width
+        else:  # center
+            x_center = current_width / 2
+            x_start = int(x_center - new_width / 2)
+        
+        x_start = max(0, x_start)
+        x_end = min(current_width, x_start + new_width)
+        
+        clip = clip.crop(x1=x_start, x2=x_end)
+        
+    elif current_ratio > target_ratio:
+        # Video is taller than mobile format - crop vertically
+        new_height = int(current_width * target_ratio)
+        
+        if crop_position == 'top':
+            y_start = 0
+        elif crop_position == 'bottom':
+            y_start = current_height - new_height
+        else:  # center with slight upward bias
+            y_center = current_height / 2
+            y_offset = current_height * 0.05  # 5% upward for better composition
+            y_start = int(y_center - new_height / 2 - y_offset)
+        
+        y_start = max(0, y_start)
+        y_end = min(current_height, y_start + new_height)
+        
+        clip = clip.crop(y1=y_start, y2=y_end)
+    
+    # Resize to exact target dimensions
+    clip = clip.resize((target_width, target_height))
+    
+    return clip
+
 # Background tasks
-async def generate_clips_from_url_task(task_id: str, url: str, output_folder: str, clip_duration: int):
+async def generate_clips_from_url_task(task_id: str, url: str, output_folder: str, clip_duration: int, mobile_format: bool = True):
     """Background task for generating clips from URL"""
     try:
         active_tasks[task_id] = {"status": "processing", "progress": 10, "message": "Downloading video..."}
@@ -636,14 +865,14 @@ async def generate_clips_from_url_task(task_id: str, url: str, output_folder: st
         yta.combine_video_audio()
         
         active_tasks[task_id] = {"status": "processing", "progress": 90, "message": "Creating clips..."}
-        yta.create_clips()
+        yta.create_clips(mobile_format=mobile_format, clip_duration=clip_duration)
         
         active_tasks[task_id] = {"status": "completed", "progress": 100, "message": "Clips generated successfully!"}
         
     except Exception as e:
         active_tasks[task_id] = {"status": "failed", "progress": 0, "message": f"Error: {str(e)}"}
 
-async def generate_clips_from_file_task(task_id: str, file_path: str, output_folder: str, clip_duration: int):
+async def generate_clips_from_file_task(task_id: str, file_path: str, output_folder: str, clip_duration: int, mobile_format: bool = True):
     """Background task for generating clips from file"""
     try:
         active_tasks[task_id] = {"status": "processing", "progress": 20, "message": "Processing file..."}
@@ -673,12 +902,17 @@ async def generate_clips_from_file_task(task_id: str, file_path: str, output_fol
                 break
             
             clip = video.subclip(start, end)
+            
+            # Apply mobile format conversion if enabled
+            if mobile_format:
+                clip = convert_clip_to_mobile_format(clip)
+            
             number = start // clip_duration
             if number_of_clips > 0:
                 number += number_of_clips
             
             out_path = os.path.join(clips_folder, f"clip_{number}.mp4")
-            clip.write_videofile(out_path, codec='libx264')
+            clip.write_videofile(out_path, codec='libx264', audio_codec='aac')
         
         video.close()
         

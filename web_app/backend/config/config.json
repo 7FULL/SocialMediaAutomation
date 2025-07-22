@@ -1,6 +1,27 @@
 {
     "YouTube": {
-        "accounts": {},
+        "accounts": {
+            "LaughStorm": {
+                "token_path": "",
+                "active": true,
+                "clip_folder": "youtube_automation/account_clips/LaughStorm",
+                "schedule": {
+                    "Monday": [],
+                    "Tuesday": [],
+                    "Wednesday": [],
+                    "Thursday": [],
+                    "Friday": [],
+                    "Saturday": [],
+                    "Sunday": []
+                },
+                "authenticated": false,
+                "description": "dadada",
+                "tags": "",
+                "title": "",
+                "category_id": "",
+                "clip_duration": 57
+            }
+        },
         "auto_upload": true
     },
     "Instagram": {

@@ -93,9 +93,25 @@ export function ApiProvider({ children }) {
     }
   };
 
-  const generateClipsFromUrl = async (platformName, accountName, url) => {
+  const reauthenticateAccount = async (platformName, accountName, authData) => {
     try {
-      const response = await api.post(`/platforms/${platformName}/accounts/${accountName}/generate-from-url`, { url });
+      const response = await api.post(`/platforms/${platformName}/accounts/${accountName}/reauth`, {
+        name: accountName,
+        ...authData
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error re-authenticating account:', error);
+      throw error;
+    }
+  };
+
+  const generateClipsFromUrl = async (platformName, accountName, url, mobileFormat = true) => {
+    try {
+      const response = await api.post(`/platforms/${platformName}/accounts/${accountName}/generate-from-url`, { 
+        url,
+        mobile_format: mobileFormat
+      });
       return response.data;
     } catch (error) {
       console.error('Error generating clips from URL:', error);
@@ -103,10 +119,11 @@ export function ApiProvider({ children }) {
     }
   };
 
-  const generateClipsFromFile = async (platformName, accountName, file) => {
+  const generateClipsFromFile = async (platformName, accountName, file, mobileFormat = true) => {
     try {
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('mobile_format', mobileFormat);
       const response = await api.post(`/platforms/${platformName}/accounts/${accountName}/generate-from-file`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -329,6 +346,7 @@ export function ApiProvider({ children }) {
     createAccount,
     updateAccount,
     deleteAccount,
+    reauthenticateAccount,
     generateClipsFromUrl,
     generateClipsFromFile,
     uploadContent,

@@ -12,7 +12,7 @@ import hashlib
 from mailjet_rest import Client
 
 class SettingsManager:
-    def __init__(self, config_file="web_app/config/app_settings.json"):
+    def __init__(self, config_file="config/app_settings.json"):
         self.config_file = config_file
         self.config_dir = os.path.dirname(config_file)
         os.makedirs(self.config_dir, exist_ok=True)

@@ -118,7 +118,7 @@ class YouTubeAutomation:
         youtube = googleapiclient.discovery.build("youtube", "v3", credentials=credentials)
 
         # Determinar el siguiente clip a subir
-        log_file = f"web_app/backend/youtube_automation/logs/{self.account_name}_uploaded_videos.json"
+        log_file = f"E:\CODING\Python\SocialMediaAutomation\web_app/backend\youtube_automation\logs/{self.account_name}_uploaded_videos.json"
         clip_filename, part_number = self.get_next_clip_to_upload(log_file)
         
         if not clip_filename:
@@ -430,7 +430,7 @@ class YouTubeAutomation:
         return response
 
     def log_video(self, title, clip_filename=None):
-        log_file = f"web_app/backend/youtube_automation/logs/{self.account_name}_uploaded_videos.json"
+        log_file = f"E:\CODING\Python\SocialMediaAutomation\web_app/backend\youtube_automation\logs/{self.account_name}_uploaded_videos.json"
         
         # Create directory if it doesn't exist
         os.makedirs(os.path.dirname(log_file), exist_ok=True)

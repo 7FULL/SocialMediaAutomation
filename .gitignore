@@ -12,3 +12,4 @@
 /web_app/backend/youtube_automation/account_clips/*
 web_app/backend/tiktok_automation/account_clips/*
 /web_app/frontend/node_modules/*
+/.claude/settings.local.json

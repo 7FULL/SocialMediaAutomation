@@ -268,7 +268,7 @@ app.add_middleware(
 security = HTTPBearer()
 
 # Mount static files
-app.mount("/static", StaticFiles(directory="../frontend/build\static"), name="static")
+app.mount("/static", StaticFiles(directory="../frontend/build/static"), name="static")
 
 # Authentication endpoints
 @app.post("/api/auth/login", response_model=TokenResponse)
@@ -461,6 +461,114 @@ def calculate_clips_needed_per_week(schedule: dict) -> int:
             total_uploads_per_week += len(times)
     
     return total_uploads_per_week
+
+# TikTok-specific endpoints (must be before generic platform endpoints)
+@app.get("/api/test/tiktok/{account_name}")
+async def test_tiktok_endpoint(account_name: str):
+    """Test endpoint to verify routing works"""
+    return {"message": f"TikTok endpoint working for {account_name}", "test": True}
+
+@app.get("/api/platforms/TikTok/accounts/{account_name}/cookies")
+async def get_tiktok_cookies(
+    account_name: str,
+    # Temporarily removed authentication for testing
+    # token: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get TikTok cookies for browser injection"""
+    # verify_token(token.credentials)
+    
+    try:
+        # Load config to get account data
+        fresh_config_data = load_config()
+        
+        if "TikTok" not in fresh_config_data or account_name not in fresh_config_data["TikTok"]["accounts"]:
+            raise HTTPException(status_code=404, detail="TikTok account not found")
+        
+        # Get cookies file path
+        config_dir = f"tiktok_automation/account_config"
+        cookies_file = f"{config_dir}/tiktok_cookies_{account_name}.txt"
+        
+        print(f"Looking for cookies file: {cookies_file}")
+        print(f"Config directory exists: {os.path.exists(config_dir)}")
+        print(f"Cookies file exists: {os.path.exists(cookies_file)}")
+        
+        if not os.path.exists(cookies_file):
+            # Try alternative path structure used during account creation
+            alt_config_dir = f"web_app/backend/tiktok_automation/account_config"
+            alt_cookies_file = f"{alt_config_dir}/tiktok_cookies_{account_name}.txt"
+            print(f"Trying alternative path: {alt_cookies_file}")
+            print(f"Alternative file exists: {os.path.exists(alt_cookies_file)}")
+            
+            if os.path.exists(alt_cookies_file):
+                cookies_file = alt_cookies_file
+            else:
+                raise HTTPException(status_code=404, detail=f"Cookies file not found at {cookies_file} or {alt_cookies_file}")
+        
+        # Read and parse cookies
+        cookies_list = []
+        try:
+            with open(cookies_file, 'r') as f:
+                cookies_content = f.read().strip()
+            
+            print(f"Cookies file content length: {len(cookies_content)}")
+            print(f"First 200 chars: {cookies_content[:200]}")
+            
+            # Parse Netscape format cookies
+            lines = cookies_content.split('\n')
+            print(f"Total lines in cookies file: {len(lines)}")
+            
+            for i, line in enumerate(lines):
+                line = line.strip()
+                if line and not line.startswith('#'):
+                    try:
+                        parts = line.split('\t')
+                        print(f"Line {i}: {len(parts)} parts - {parts[:3] if len(parts) >= 3 else parts}")
+                        
+                        if len(parts) >= 7:
+                            domain = parts[0]
+                            path = parts[2]
+                            secure = parts[3].lower() == 'true'
+                            expires = int(parts[4]) if parts[4] != '0' else None
+                            name = parts[5]
+                            value = parts[6]
+                            
+                            # Only include TikTok domains
+                            if 'tiktok.com' in domain:
+                                cookie_obj = {
+                                    'domain': domain,
+                                    'path': path,
+                                    'secure': secure,
+                                    'name': name,
+                                    'value': value
+                                }
+                                if expires:
+                                    cookie_obj['expires'] = expires
+                                
+                                cookies_list.append(cookie_obj)
+                                print(f"Added TikTok cookie: {name} for domain {domain}")
+                        else:
+                            print(f"Skipping line {i}: insufficient parts ({len(parts)})")
+                    except (IndexError, ValueError) as e:
+                        print(f"Error parsing line {i}: {e}")
+                        continue
+            
+            print(f"Total TikTok cookies found: {len(cookies_list)}")
+            
+            return {
+                "cookies": cookies_list,
+                "account_name": account_name,
+                "cookies_count": len(cookies_list)
+            }
+            
+        except Exception as e:
+            print(f"Error parsing cookies file: {e}")
+            raise HTTPException(status_code=500, detail="Error parsing cookies file")
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error getting TikTok cookies for {account_name}: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # Account management endpoints
 @app.get("/api/platforms/{platform_name}/accounts", response_model=List[AccountInfo])
@@ -776,6 +884,7 @@ async def upload_content(
     active_tasks[task_id] = {"status": "processing", "progress": 0, "message": "Starting upload..."}
     
     return {"task_id": task_id, "message": "Upload started"}
+
 
 # Re-authentication endpoint
 @app.post("/api/platforms/{platform_name}/accounts/{account_name}/reauth", response_model=ReauthResponse)

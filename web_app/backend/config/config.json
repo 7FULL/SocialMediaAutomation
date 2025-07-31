@@ -1,0 +1,117 @@
+{
+    "YouTube": {
+        "accounts": {
+            "LaughStorm": {
+                "token_path": "",
+                "active": true,
+                "clip_folder": "youtube_automation/account_clips/LaughStorm",
+                "schedule": {
+                    "Monday": [
+                        "17:00",
+                        "20:00",
+                        "22:00"
+                    ],
+                    "Tuesday": [
+                        "17:00",
+                        "20:00",
+                        "22:00"
+                    ],
+                    "Wednesday": [
+                        "17:00",
+                        "20:00",
+                        "22:00"
+                    ],
+                    "Thursday": [
+                        "17:00",
+                        "20:00",
+                        "22:00"
+                    ],
+                    "Friday": [
+                        "17:00",
+                        "20:00",
+                        "22:00"
+                    ],
+                    "Saturday": [
+                        "16:00",
+                        "18:00",
+                        "21:00"
+                    ],
+                    "Sunday": [
+                        "16:00",
+                        "18:00",
+                        "21:00"
+                    ]
+                },
+                "authenticated": true,
+                "description": "Best funny moments of the day! \ud83e\udd23 New shorts daily \u2013 don\u2019t miss out. Like, comment, and subscribe for more!",
+                "tags": "shorts, shortvideo, youtubeshorts, viral, funny, comedy, laugh, meme, memes, lol, relatable, fails, fun, reaction, trynottolaugh, hilarious, trending, entertainment, dailyshorts, explore, humor, funnymoments, funnyvideos, laughoutloud, usacomedy, prank, compilation",
+                "title": "Dont laugh challenge",
+                "category_id": "23",
+                "clip_duration": 57
+            }
+        },
+        "auto_upload": true
+    },
+    "Instagram": {
+        "accounts": {},
+        "auto_upload": false
+    },
+    "Twitter": {
+        "accounts": {},
+        "auto_upload": false
+    },
+    "TikTok": {
+        "accounts": {
+            "laugh_storm_": {
+                "token_path": "",
+                "active": true,
+                "clip_folder": "tiktok_automation/account_clips/laugh_storm_",
+                "schedule": {
+                    "Monday": [
+                        "15:00",
+                        "18:00",
+                        "21:00"
+                    ],
+                    "Tuesday": [
+                        "15:00",
+                        "18:00",
+                        "21:00"
+                    ],
+                    "Wednesday": [
+                        "15:00",
+                        "18:00",
+                        "21:00"
+                    ],
+                    "Thursday": [
+                        "15:00",
+                        "18:00",
+                        "21:00"
+                    ],
+                    "Friday": [
+                        "15:00",
+                        "18:00",
+                        "21:00"
+                    ],
+                    "Saturday": [
+                        "14:00",
+                        "17:00",
+                        "20:00"
+                    ],
+                    "Sunday": [
+                        "14:00",
+                        "17:00",
+                        "20:00"
+                    ]
+                },
+                "authenticated": true,
+                "description": "Best funny moments of the day! New videos daily \u2013 don\u2019t miss out. Like, comment, and subscribe for more!",
+                "tags": "shorts, shortvideo, youtubeshorts, viral, funny, comedy, laugh, meme, memes, lol, relatable, fails, fun, reaction, trynottolaugh, hilarious, trending, entertainment, dailyshorts, explore, humor, funnymoments, funnyvideos, laughoutloud, usacomedy, prank, compilation",
+                "title": "Dont laugh challenge",
+                "category_id": "",
+                "clip_duration": 57,
+                "cookies_content": "# Netscape HTTP Cookie File\n# http://curl.haxx.se/rfc/cookie_spec.html\n# This is a generated file!  Do not edit.\n\n.tiktok.com\tTRUE\t/\tTRUE\t1761465985\t_ttp\t2y9pt0tdYXWdLWL67ILoHZ5cCFl\n.tiktok.com\tTRUE\t/\tTRUE\t1769281095\ttt_chain_token\t28CvKgprNYTYIse7zhrV3A==\n.www.tiktok.com\tTRUE\t/\tTRUE\t1776983302\tdelay_guest_mode_vid\t5\n.tiktok.com\tTRUE\t/\tTRUE\t1757062517\tpassport_csrf_token\ta7de434009f016bc39893fed5784f9b2\n.tiktok.com\tTRUE\t/\tTRUE\t1757062517\tpassport_csrf_token_default\ta7de434009f016bc39893fed5784f9b2\n.tiktok.com\tTRUE\t/\tTRUE\t1786106085\tcookie-consent\t{%22optional%22:true%2C%22ga%22:true%2C%22af%22:true%2C%22fbp%22:true%2C%22lip%22:true%2C%22bing%22:true%2C%22ttads%22:true%2C%22reddit%22:true%2C%22hubspot%22:true%2C%22version%22:%22v10%22}\n.tiktok.com\tTRUE\t/\tFALSE\t1756283788\tpassport_auth_status\tf5aeb349d559f45e7787ffa12114213b%2C\n.tiktok.com\tTRUE\t/\tTRUE\t1756283788\tpassport_auth_status_ss\tf5aeb349d559f45e7787ffa12114213b%2C\n.www.tiktok.com\tTRUE\t/\tFALSE\t1754296871\t__tea_cache_tokens_1988\t{%22web_id%22:%221311241094292234131%22%2C%22user_unique_id%22:%221311241094292234131%22%2C%22timestamp%22:1753692071708%2C%22_type_%22:%22default%22}\n.www.tiktok.com\tTRUE\t/\tTRUE\t1779612101\ttiktok_webapp_theme_manual\t0\n.www.tiktok.com\tTRUE\t/\tTRUE\t1779649095\ttiktok_webapp_theme\tlight\n.tiktok.com\tTRUE\t/\tFALSE\t1769253037\tstore-country-code\tes\n.tiktok.com\tTRUE\t/\tFALSE\t1769253037\tstore-country-code-src\tuid\n.tiktok.com\tTRUE\t/\tFALSE\t1769253037\ttt-target-idc\teu-ttp2\nwww.tiktok.com\tFALSE\t/\tFALSE\t1761477037\tlast_login_method\temail\n.tiktok.com\tTRUE\t/\tFALSE\t1785237038\td_ticket\t3df5071e51ff8698f2fee4c673738e89767d2\n.tiktok.com\tTRUE\t/\tTRUE\t1758885038\tmulti_sids\t7532048478697210902%3A16595e730cfe49f4ed161533b5f5a474\n.tiktok.com\tTRUE\t/\tTRUE\t1758885038\tcmpl_token\tAgQQAPOUF-RO0ri52Ijb9h0v8ipm_O4Xf5QfYN5lyg\n.tiktok.com\tTRUE\t/\tTRUE\t1769253038\tuid_tt\t9b2d47f767d9358fd617fe4a55ec8b9c5cb3e35191731a62d6a73638517ae6a0\n.tiktok.com\tTRUE\t/\tTRUE\t1769253038\tuid_tt_ss\t9b2d47f767d9358fd617fe4a55ec8b9c5cb3e35191731a62d6a73638517ae6a0\n.tiktok.com\tTRUE\t/\tTRUE\t1769253038\tsid_tt\t16595e730cfe49f4ed161533b5f5a474\n.tiktok.com\tTRUE\t/\tTRUE\t1769253038\tsessionid\t16595e730cfe49f4ed161533b5f5a474\n.tiktok.com\tTRUE\t/\tTRUE\t1769253038\tsessionid_ss\t16595e730cfe49f4ed161533b5f5a474\n.tiktok.com\tTRUE\t/\tFALSE\t1769253037\tstore-idc\tno1a\n.tiktok.com\tTRUE\t/\tFALSE\t1785237038\ttt-target-idc-sign\tnezgH7w66KTvSuOE9oV0pEBlBdlHWClXgIAvsxPakKadYUXxzZhTROtstRi9plFrWZFQkYrnxCrMnXp72bdmb31VsYRC4akrNjoF6jGqUoserSGP0B2pcCPscWJdCi0sEmPeN506KSq3t4e4BpeoA0TSAdTcQ_ETBK68NP6trnA3rBcJyI8HTh2OIcfmxRn1UknozuH56_9aXfb1RZltqzjPS6t8TeQyQi4aeqiLARxDrUwLzl7uSPFm7yBJzrMf5smPUw4EogM1xkVHamf2ae9Q6w81YuQhymctZvPNLB9E2aZmI0R54w30xxllYDJueBK9k6J5qTULSnbhvgwyYamczPwUZ0xImHoaZle8Zle5tb0mlFfNL_0Ot8NEg71Bt2fTJVvSGAF5cytgV-AQmFsDgPhkvtY1GpkJ8zb_wGGcgki6xiLaxscBrCod94MXum6Fexu_oAwro2bB9-hcMQpbl4OcePICkSgWoQ4Nl-A9AwtG89qcwlAjorGJ-NnI\n.www.tiktok.com\tTRUE\t/\tTRUE\t1779649095\ttiktok_webapp_theme_source\tauto\n.tiktok.com\tTRUE\t/\tTRUE\t1784805041\tsid_guard\t16595e730cfe49f4ed161533b5f5a474%7C1753701041%7C15551997%7CSat%2C+24-Jan-2026+11%3A10%3A38+GMT\n.tiktok.com\tTRUE\t/\tTRUE\t1769253038\tsid_ucp_v1\t1.0.0-KDI0ZTQ3NGY0ODExYjI3NjRjMzI4N2I0ZDVjMjE3MGIwYzgyMzU2MGIKGgiWiJOe9cXNw2gQsbWdxAYYsws4AUDqB0gEEAUaBG5vMWEiIDE2NTk1ZTczMGNmZTQ5ZjRlZDE2MTUzM2I1ZjVhNDc0\n.tiktok.com\tTRUE\t/\tTRUE\t1769253038\tssid_ucp_v1\t1.0.0-KDI0ZTQ3NGY0ODExYjI3NjRjMzI4N2I0ZDVjMjE3MGIwYzgyMzU2MGIKGgiWiJOe9cXNw2gQsbWdxAYYsws4AUDqB0gEEAUaBG5vMWEiIDE2NTk1ZTczMGNmZTQ5ZjRlZDE2MTUzM2I1ZjVhNDc0\n.tiktok.com\tTRUE\t/\tTRUE\t0\ttt_csrf_token\tGAgNR4c6-Y66LeqhEUQcV0-mZFCfdxH16vkY\n.tiktok.com\tTRUE\t/\tFALSE\t1769253037\tstore-country-sign\tMEIEDAAWGu4KlXTBroXpZwQgsqczjIGpLPZcRTzBYnWqPUe35Pu_l59jIiNkkO76CtQEEFbl-IioVBnoJBddRn6lA6Q\n.www.tiktok.com\tTRUE\t/\tFALSE\t0\tpassport_fe_beating_status\ttrue\n.tiktok.com\tTRUE\t/\tTRUE\t1785265096\tttwid\t1%7CBBEqCya7kXiZpr49zcuTOSPdNbc0hmMGVcMXMar7fbw%7C1753729097%7C5addf7a4cfce5e290e323e42f2546dc24ce63c4a7ef81b4266842707022341e1\n.tiktok.com\tTRUE\t/\tFALSE\t1785265097\todin_tt\t4c6078f980a5aeb86fa5b6f870d05584277b93121c5afd6a78963e4a02f76a4578fbc0dbd3f14691d570c47aec69d54a105ac6f621999833da9151b29a9ca4eb32d31b25fcb73ff207be4d1d1b8f4279\n.tiktok.com\tTRUE\t/\tTRUE\t1754593099\tmsToken\tuNAUL9oiuyfxIRoq-faI8Pb-mjmJlq8nztdeMTUi4RwzmFVgvbwGp5TFQkR7BTiI5mk5O1Z1KG-6LwhXZoJRCL5UgQYNK7Fyvd7aV3PSo2Jktj_Vbx_5v4XUYejgQ0zq9OA9jjWr2EPwWk8=\n.www.tiktok.com\tTRUE\t/\tTRUE\t1754161099\tperf_feed_cache\t{%22expireTimestamp%22:1753898400000%2C%22itemIds%22:[%227529849896195591426%22%2C%227522553906010918166%22%2C%227509127691770039574%22]}\nwww.tiktok.com\tFALSE\t/\tFALSE\t1761505107\tmsToken\taetPm4OZy-GwB5Kr0P6k67W_YswXRcdKKALG3oz_k_qbTznjgreXCtqghrlLDwPr26d1M1vxEiCguOENjMTnKHwQjtumCyPJqw91YW45v4LSUtkSYeOBYS5IY-yoBDNxEe-afjZ-RaJZw2o=\n"
+            }
+        },
+        "auto_upload": true
+    }
+}

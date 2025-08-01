@@ -52,7 +52,8 @@ class CreateAccountRequest(BaseModel):
     # TikTok specific
     cookies_content: Optional[str] = None
     # Instagram specific
-    access_token: Optional[str] = None
+    instagram_username: Optional[str] = None
+    instagram_password: Optional[str] = None
     # Twitter specific
     api_key: Optional[str] = None
     api_secret: Optional[str] = None

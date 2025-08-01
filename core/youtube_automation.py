@@ -109,7 +109,7 @@ class YouTubeAutomation:
             return
         else:
             project_root = os.path.dirname(os.path.dirname(__file__))
-            token_file = os.path.join(project_root, "web_app/backend/youtube_automation/account_tokens", f"token_{self.account_name}.pickle")
+            token_file = os.path.join(project_root, "youtube_automation/account_tokens", f"token_{self.account_name}.pickle")
 
             if os.path.exists(token_file):
                 with open(token_file, 'rb') as token_file_obj:
@@ -118,7 +118,7 @@ class YouTubeAutomation:
         youtube = googleapiclient.discovery.build("youtube", "v3", credentials=credentials)
 
         # Determinar el siguiente clip a subir
-        log_file = f"..\web_app/backend\youtube_automation\logs/{self.account_name}_uploaded_videos.json"
+        log_file = f"youtube_automation\logs/{self.account_name}_uploaded_videos.json"
         clip_filename, part_number = self.get_next_clip_to_upload(log_file)
         
         if not clip_filename:
@@ -361,10 +361,8 @@ class YouTubeAutomation:
         """
         if scopes is None:
             scopes = ["https://www.googleapis.com/auth/youtube.upload"]
-        # Get the project root directory (where core/ and web_app/ are located)
-        project_root = os.path.dirname(os.path.dirname(__file__))
-        token_file = os.path.join(project_root, "web_app/backend/youtube_automation/account_tokens", f"token_{account_name}.pickle")
-        secrets_file = os.path.join(project_root, "web_app/backend/youtube_automation/account_secrets", f"client_secrets_{account_name}.json")
+        token_file = "youtube_automation/account_tokens", f"token_{account_name}.pickle"
+        secrets_file = "youtube_automation/account_secrets", f"client_secrets_{account_name}.json"
 
         creds = None
 
@@ -430,7 +428,7 @@ class YouTubeAutomation:
         return response
 
     def log_video(self, title, clip_filename=None):
-        log_file = f"..\web_app/backend\youtube_automation\logs/{self.account_name}_uploaded_videos.json"
+        log_file = f"youtube_automation\logs/{self.account_name}_uploaded_videos.json"
         
         # Create directory if it doesn't exist
         os.makedirs(os.path.dirname(log_file), exist_ok=True)

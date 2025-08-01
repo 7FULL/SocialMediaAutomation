@@ -129,7 +129,7 @@ class SettingsManager:
 class BackupManager:
     def __init__(self, settings_manager: SettingsManager):
         self.settings = settings_manager
-        self.backup_dir = self.settings.get_setting('backup', 'backupLocation', 'web_app/backups')
+        self.backup_dir = self.settings.get_setting('backup', 'backupLocation', 'backups')
         os.makedirs(self.backup_dir, exist_ok=True)
     
     def create_backup(self, include_videos: bool = None) -> Dict[str, Any]:

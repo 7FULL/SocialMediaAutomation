@@ -53,7 +53,57 @@
         "auto_upload": true
     },
     "Instagram": {
-        "accounts": {},
+        "accounts": {
+            "animalkingdom_lt": {
+                "token_path": "",
+                "active": true,
+                "clip_folder": "instagram_automation/account_clips/animalkingdom_lt",
+                "schedule": {
+                    "Monday": [
+                        "17:00",
+                        "20:00",
+                        "22:00"
+                    ],
+                    "Tuesday": [
+                        "17:00",
+                        "20:00",
+                        "22:00"
+                    ],
+                    "Wednesday": [
+                        "17:00",
+                        "20:00",
+                        "22:00"
+                    ],
+                    "Thursday": [
+                        "17:00",
+                        "20:00",
+                        "22:00"
+                    ],
+                    "Friday": [
+                        "17:00",
+                        "20:00",
+                        "22:00"
+                    ],
+                    "Saturday": [
+                        "16:00",
+                        "18:00",
+                        "21:00"
+                    ],
+                    "Sunday": [
+                        "16:00",
+                        "18:00",
+                        "21:00"
+                    ]
+                },
+                "authenticated": true,
+                "description": "adadad",
+                "tags": "viral, funny, comedy, laugh, meme, memes, lol, relatable, fails, fun, reaction, trynottolaugh, hilarious, trending, entertainment, dailyshorts, explore, humor, funnymoments, funnyvideos, laughoutloud, prank, compilation",
+                "title": "Dont laugh challenge animal edition",
+                "clip_duration": 57,
+                "instagram_username": "animalkingdom_lt",
+                "instagram_password": "aB^ynMbdie5zU6WXGqmQ@5"
+            }
+        },
         "auto_upload": false
     },
     "Twitter": {

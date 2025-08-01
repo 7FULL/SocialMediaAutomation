@@ -261,41 +261,71 @@ function PlatformAuthForm({ platform, onAuthDataChange, isReauth = false }) {
           <div>
             <h4 className="font-medium text-pink-900">Instagram Setup Instructions</h4>
             <p className="text-sm text-pink-700 mt-1">
-              1. Go to <a href="https://developers.facebook.com/" target="_blank" rel="noopener noreferrer" className="underline">Facebook Developers</a>
+              1. Make sure you have an Instagram account
               <br />
-              2. Create a new app with Instagram Basic Display
+              2. Enable Two-Factor Authentication if required
               <br />
-              3. Get your access token
+              3. Enter your Instagram username and password below
               <br />
-              4. Configure Instagram Basic Display settings
+              4. The system will handle authentication automatically
             </p>
           </div>
         </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Access Token
-        </label>
-        <div className="relative">
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <div className="flex items-start">
+          <svg className="h-5 w-5 text-yellow-600 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+          <div>
+            <h4 className="font-medium text-yellow-900">Security Notice</h4>
+            <p className="text-sm text-yellow-700 mt-1">
+              Your credentials are stored securely and only used for Instagram API access. 
+              Consider using an app-specific password if available.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Instagram Username
+          </label>
           <input
-            type={showSecrets.access_token ? 'text' : 'password'}
-            value={authData.access_token || ''}
-            onChange={(e) => handleInputChange('access_token', e.target.value)}
-            className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
-            placeholder="Enter your Instagram Access Token"
+            type="text"
+            value={authData.instagram_username || ''}
+            onChange={(e) => handleInputChange('instagram_username', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+            placeholder="Enter your Instagram username"
           />
-          <button
-            type="button"
-            onClick={() => toggleSecretVisibility('access_token')}
-            className="absolute inset-y-0 right-0 pr-3 flex items-center"
-          >
-            {showSecrets.access_token ? (
-              <EyeOff className="h-5 w-5 text-gray-400" />
-            ) : (
-              <Eye className="h-5 w-5 text-gray-400" />
-            )}
-          </button>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Instagram Password
+          </label>
+          <div className="relative">
+            <input
+              type={showSecrets.instagram_password ? 'text' : 'password'}
+              value={authData.instagram_password || ''}
+              onChange={(e) => handleInputChange('instagram_password', e.target.value)}
+              className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+              placeholder="Enter your Instagram password"
+            />
+            <button
+              type="button"
+              onClick={() => toggleSecretVisibility('instagram_password')}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center"
+            >
+              {showSecrets.instagram_password ? (
+                <EyeOff className="h-5 w-5 text-gray-400" />
+              ) : (
+                <Eye className="h-5 w-5 text-gray-400" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>

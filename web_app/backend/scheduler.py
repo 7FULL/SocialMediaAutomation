@@ -15,6 +15,12 @@ try:
 except ImportError:
     from core.tiktok_automation import TikTokAutomation
 
+try:
+    from core.instagram_automation import InstagramAutomation
+except ImportError:
+    print("Warning: Instagram automation not available in scheduler")
+    InstagramAutomation = None
+
 class SchedulerService:
     def __init__(self, config_data: Dict):
         self.config_data = config_data
@@ -143,6 +149,12 @@ class SchedulerService:
             elif platform_name == "TikTok":
                 tta = TikTokAutomation(acc_data=account_data, account_name=account_name)
                 tta.upload_and_log_short()
+            elif platform_name == "Instagram":
+                if InstagramAutomation:
+                    iga = InstagramAutomation(account_name=account_name, acc_data=account_data)
+                    iga.post_next_clip()
+                else:
+                    print("Instagram automation not available")
             else:
                 print(f"Upload not implemented for {platform_name}")
                 

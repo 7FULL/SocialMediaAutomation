@@ -13,3 +13,7 @@
 web_app/backend/tiktok_automation/account_clips/*
 /web_app/frontend/node_modules/*
 /.claude/settings.local.json
+/web_app/backend/instagram_automation/*
+/web_app/backend/instagram_automation/
+/web_app/backend/youtube_automation/
+/web_app/backend/tiktok_automation/

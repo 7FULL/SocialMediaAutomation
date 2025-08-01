@@ -22,3 +22,6 @@ google-auth
 
 # TikTok automation
 tiktok-uploader
+
+# Instagram automation
+instagrapi

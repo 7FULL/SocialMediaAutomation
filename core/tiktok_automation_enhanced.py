@@ -127,7 +127,7 @@ class TikTokAutomation:
 
     def upload_and_log_short(self):
         """Upload the next available clip to TikTok and log it."""
-        log_file = f"web_app/backend/tiktok_automation/logs/{self.account_name}_uploaded_videos.json"
+        log_file = f"tiktok_automation/logs/{self.account_name}_uploaded_videos.json"
         
         # Get next clip to upload
         clip_filename, part_number = self.get_next_clip_to_upload(log_file)

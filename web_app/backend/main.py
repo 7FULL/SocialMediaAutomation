@@ -14,6 +14,8 @@ import threading
 from pathlib import Path
 from contextlib import asynccontextmanager
 
+from core.instagram_automation import InstagramAutomation
+
 # Add the parent directory to the path so we can import from core
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -143,26 +145,24 @@ async def handle_tiktok_authentication(account: CreateAccountRequest):
         return False, f"TikTok authentication error: {str(e)}"
 
 async def handle_instagram_authentication(account: CreateAccountRequest):
-    """Handle Instagram authentication with access token"""
+    """Handle Instagram authentication with username and password"""
     try:
-        if not account.access_token:
-            return False, "Access token is required for Instagram"
+        if not account.instagram_username or not account.instagram_password:
+            return False, "Instagram username and password are required"
         
-        # Create account config directory
-        config_dir = f"instagram_automation/account_config"
-        os.makedirs(config_dir, exist_ok=True)
+        # if not InstagramAutomation:
+        #     return False, "Instagram automation not available"
         
-        # Save Instagram credentials
-        config_file = f"{config_dir}/instagram_config_{account.name}.json"
-        instagram_config = {
-            "access_token": account.access_token,
-            "account_name": account.name
-        }
+        # Create Instagram automation instance
+        instagram_automation = InstagramAutomation(account.name, {})
         
-        with open(config_file, 'w') as f:
-            json.dump(instagram_config, f, indent=2)
+        # Test authentication
+        success = instagram_automation.authenticate(account.instagram_username, account.instagram_password)
         
-        return True, "Instagram configuration saved (authentication pending implementation)"
+        if success:
+            return True, f"Instagram authentication successful for @{account.instagram_username}"
+        else:
+            return False, "Instagram authentication failed - check username and password"
         
     except Exception as e:
         return False, f"Instagram authentication error: {str(e)}"
@@ -258,7 +258,7 @@ app = FastAPI(
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -425,11 +425,11 @@ def count_clips_in_folder(folder_path: str, account_name: str, platform_name: st
         # Get uploaded clips from log file
         uploaded_clips = set()
         if platform_name.lower() == "youtube":
-            log_file = f"web_app/backend/youtube_automation/logs/{account_name}_uploaded_videos.json"
+            log_file = f"youtube_automation/logs/{account_name}_uploaded_videos.json"
         elif platform_name.lower() == "tiktok":
-            log_file = f"web_app/backend/tiktok_automation/logs/{account_name}_uploaded_videos.json"
+            log_file = f"tiktok_automation/logs/{account_name}_uploaded_videos.json"
         else:
-            log_file = f"web_app/backend/{platform_name.lower()}_automation/logs/{account_name}_uploaded_videos.json"
+            log_file = f"{platform_name.lower()}_automation/logs/{account_name}_uploaded_videos.json"
         
         if os.path.exists(log_file):
             with open(log_file, 'r') as f:
@@ -461,114 +461,6 @@ def calculate_clips_needed_per_week(schedule: dict) -> int:
             total_uploads_per_week += len(times)
     
     return total_uploads_per_week
-
-# TikTok-specific endpoints (must be before generic platform endpoints)
-@app.get("/api/test/tiktok/{account_name}")
-async def test_tiktok_endpoint(account_name: str):
-    """Test endpoint to verify routing works"""
-    return {"message": f"TikTok endpoint working for {account_name}", "test": True}
-
-@app.get("/api/platforms/TikTok/accounts/{account_name}/cookies")
-async def get_tiktok_cookies(
-    account_name: str,
-    # Temporarily removed authentication for testing
-    # token: HTTPAuthorizationCredentials = Depends(security)
-):
-    """Get TikTok cookies for browser injection"""
-    # verify_token(token.credentials)
-    
-    try:
-        # Load config to get account data
-        fresh_config_data = load_config()
-        
-        if "TikTok" not in fresh_config_data or account_name not in fresh_config_data["TikTok"]["accounts"]:
-            raise HTTPException(status_code=404, detail="TikTok account not found")
-        
-        # Get cookies file path
-        config_dir = f"tiktok_automation/account_config"
-        cookies_file = f"{config_dir}/tiktok_cookies_{account_name}.txt"
-        
-        print(f"Looking for cookies file: {cookies_file}")
-        print(f"Config directory exists: {os.path.exists(config_dir)}")
-        print(f"Cookies file exists: {os.path.exists(cookies_file)}")
-        
-        if not os.path.exists(cookies_file):
-            # Try alternative path structure used during account creation
-            alt_config_dir = f"web_app/backend/tiktok_automation/account_config"
-            alt_cookies_file = f"{alt_config_dir}/tiktok_cookies_{account_name}.txt"
-            print(f"Trying alternative path: {alt_cookies_file}")
-            print(f"Alternative file exists: {os.path.exists(alt_cookies_file)}")
-            
-            if os.path.exists(alt_cookies_file):
-                cookies_file = alt_cookies_file
-            else:
-                raise HTTPException(status_code=404, detail=f"Cookies file not found at {cookies_file} or {alt_cookies_file}")
-        
-        # Read and parse cookies
-        cookies_list = []
-        try:
-            with open(cookies_file, 'r') as f:
-                cookies_content = f.read().strip()
-            
-            print(f"Cookies file content length: {len(cookies_content)}")
-            print(f"First 200 chars: {cookies_content[:200]}")
-            
-            # Parse Netscape format cookies
-            lines = cookies_content.split('\n')
-            print(f"Total lines in cookies file: {len(lines)}")
-            
-            for i, line in enumerate(lines):
-                line = line.strip()
-                if line and not line.startswith('#'):
-                    try:
-                        parts = line.split('\t')
-                        print(f"Line {i}: {len(parts)} parts - {parts[:3] if len(parts) >= 3 else parts}")
-                        
-                        if len(parts) >= 7:
-                            domain = parts[0]
-                            path = parts[2]
-                            secure = parts[3].lower() == 'true'
-                            expires = int(parts[4]) if parts[4] != '0' else None
-                            name = parts[5]
-                            value = parts[6]
-                            
-                            # Only include TikTok domains
-                            if 'tiktok.com' in domain:
-                                cookie_obj = {
-                                    'domain': domain,
-                                    'path': path,
-                                    'secure': secure,
-                                    'name': name,
-                                    'value': value
-                                }
-                                if expires:
-                                    cookie_obj['expires'] = expires
-                                
-                                cookies_list.append(cookie_obj)
-                                print(f"Added TikTok cookie: {name} for domain {domain}")
-                        else:
-                            print(f"Skipping line {i}: insufficient parts ({len(parts)})")
-                    except (IndexError, ValueError) as e:
-                        print(f"Error parsing line {i}: {e}")
-                        continue
-            
-            print(f"Total TikTok cookies found: {len(cookies_list)}")
-            
-            return {
-                "cookies": cookies_list,
-                "account_name": account_name,
-                "cookies_count": len(cookies_list)
-            }
-            
-        except Exception as e:
-            print(f"Error parsing cookies file: {e}")
-            raise HTTPException(status_code=500, detail="Error parsing cookies file")
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"Error getting TikTok cookies for {account_name}: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
 
 # Account management endpoints
 @app.get("/api/platforms/{platform_name}/accounts", response_model=List[AccountInfo])
@@ -690,9 +582,26 @@ async def create_account(
         "clip_duration": account.clip_duration or 57
     }
     
-    # Only add category_id for YouTube
+    # Add platform-specific data
     if platform_name == "YouTube":
         account_config["category_id"] = account.category_id or ""
+        if account.client_secrets_content:
+            account_config["client_secrets_content"] = account.client_secrets_content
+    elif platform_name == "TikTok":
+        if account.cookies_content:
+            account_config["cookies_content"] = account.cookies_content
+    elif platform_name == "Instagram":
+        if account.instagram_username and account.instagram_password:
+            account_config["instagram_username"] = account.instagram_username
+            account_config["instagram_password"] = account.instagram_password
+    elif platform_name == "Twitter":
+        if all([account.api_key, account.api_secret, account.access_token_key, account.access_token_secret]):
+            account_config.update({
+                "api_key": account.api_key,
+                "api_secret": account.api_secret,
+                "access_token_key": account.access_token_key,
+                "access_token_secret": account.access_token_secret
+            })
     
     config_data[platform_name]["accounts"][account.name] = account_config
     
@@ -823,7 +732,7 @@ async def generate_clips_from_file(
     task_id = f"{platform_name}_{account_name}_{datetime.now().timestamp()}"
     
     # Save uploaded file
-    upload_path = f"web_app/uploads/{file.filename}"
+    upload_path = f"uploads/{file.filename}"
     with open(upload_path, "wb") as buffer:
         content = await file.read()
         buffer.write(content)
@@ -935,8 +844,9 @@ async def reauthenticate_account(
             account_data["client_secrets_content"] = request.client_secrets_content
         elif platform_name == "TikTok" and request.cookies_content:
             account_data["cookies_content"] = request.cookies_content
-        elif platform_name == "Instagram" and request.access_token:
-            account_data["access_token"] = request.access_token
+        elif platform_name == "Instagram" and request.instagram_username and request.instagram_password:
+            account_data["instagram_username"] = request.instagram_username
+            account_data["instagram_password"] = request.instagram_password
         elif platform_name == "Twitter" and all([request.api_key, request.api_secret, request.access_token_key, request.access_token_secret]):
             account_data.update({
                 "api_key": request.api_key,
@@ -1144,6 +1054,12 @@ async def upload_content_task(task_id: str, platform_name: str, account_name: st
         elif platform_name == "TikTok":
             tta = TikTokAutomation(acc_data=account_data, account_name=account_name)
             tta.upload_and_log_short()
+        elif platform_name == "Instagram":
+            if InstagramAutomation:
+                iga = InstagramAutomation(account_name=account_name, acc_data=account_data)
+                iga.post_next_clip()
+            else:
+                raise Exception("Instagram automation not available")
         else:
             raise Exception(f"Upload not implemented for {platform_name}")
         

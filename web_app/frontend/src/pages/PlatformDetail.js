@@ -300,156 +300,51 @@ function PlatformDetail() {
     }
   };
 
-  const handleOpenTikTokProfile = async (account) => {
-    try {
-      toast('Loading TikTok session...');
-      
-      // Get cookies from backend
-      const token = localStorage.getItem('token');
-      console.log('Using token:', token ? 'Token exists' : 'No token found');
-      
-      const response = await fetch(`/api/platforms/TikTok/accounts/${account.name}/cookies`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      console.log('Cookie response status:', response.status);
-      
-      if (response.ok) {
-        const responseText = await response.text();
-        console.log('Raw response:', responseText);
-        
-        let cookiesData;
-        try {
-          cookiesData = JSON.parse(responseText);
-          console.log('Cookies data received:', cookiesData);
-        } catch (parseError) {
-          console.error('Failed to parse JSON response:', parseError);
-          console.error('Response was:', responseText);
-          throw new Error('Invalid JSON response from server');
-        }
-        const cookies = cookiesData.cookies;
-        
-        if (cookies && cookies.length > 0) {
-          // Create a temporary page to inject cookies and redirect to TikTok
-          const cookieInjectionScript = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-              <title>Loading TikTok Session...</title>
-              <style>
-                body { 
-                  font-family: Arial, sans-serif; 
-                  display: flex; 
-                  justify-content: center; 
-                  align-items: center; 
-                  height: 100vh; 
-                  margin: 0;
-                  background: linear-gradient(135deg, #ff0050, #ff4d6d, #c0392b);
-                  color: white;
-                }
-                .loader {
-                  text-align: center;
-                }
-                .spinner {
-                  border: 4px solid rgba(255,255,255,0.3);
-                  border-radius: 50%;
-                  border-top: 4px solid white;
-                  width: 40px;
-                  height: 40px;
-                  animation: spin 2s linear infinite;
-                  margin: 0 auto 20px;
-                }
-                @keyframes spin {
-                  0% { transform: rotate(0deg); }
-                  100% { transform: rotate(360deg); }
-                }
-              </style>
-            </head>
-            <body>
-              <div class="loader">
-                <div class="spinner"></div>
-                <h2>Loading TikTok Session for ${account.name}</h2>
-                <p>Setting up cookies and redirecting...</p>
-              </div>
-              
-              <script>
-                const cookies = ${JSON.stringify(cookies)};
-                let cookiesSet = 0;
-                
-                async function setCookies() {
-                  for (const cookie of cookies) {
-                    try {
-                      // Set cookie using document.cookie
-                      let cookieString = cookie.name + '=' + cookie.value;
-                      cookieString += '; domain=' + cookie.domain;
-                      cookieString += '; path=' + cookie.path;
-                      
-                      if (cookie.secure) {
-                        cookieString += '; secure';
-                      }
-                      
-                      if (cookie.expires) {
-                        const expireDate = new Date(cookie.expires * 1000);
-                        cookieString += '; expires=' + expireDate.toUTCString();
-                      }
-                      
-                      document.cookie = cookieString;
-                      cookiesSet++;
-                    } catch (error) {
-                      console.log('Failed to set cookie:', cookie.name, error);
-                    }
-                  }
-                  
-                  console.log('Set', cookiesSet, 'out of', cookies.length, 'cookies');
-                  
-                  // Wait a moment for cookies to be set, then redirect
-                  setTimeout(() => {
-                    window.location.href = 'https://www.tiktok.com/';
-                  }, 1500);
-                }
-                
-                setCookies();
-              </script>
-            </body>
-            </html>
-          `;
-          
-          // Create a blob with the HTML content
-          const blob = new Blob([cookieInjectionScript], { type: 'text/html' });
-          const url = URL.createObjectURL(blob);
-          
-          // Open in new window
-          const newWindow = window.open(url, '_blank');
-          
-          // Clean up the blob URL after a delay
-          setTimeout(() => {
-            URL.revokeObjectURL(url);
-          }, 5000);
-          
-          toast.success(`Loading TikTok session for ${account.name} (${cookies.length} cookies)`);
-        } else {
-          // No cookies available, open TikTok normally
-          console.log('No cookies found in response');
-          window.open('https://www.tiktok.com', '_blank');
-          toast('No cookies available - opening TikTok without session', { icon: '⚠️' });
-        }
-      } else {
-        // Fallback if API call fails
-        const errorText = await response.text();
-        console.error('API call failed:', response.status, response.statusText, errorText);
-        console.error('Response headers:', [...response.headers.entries()]);
-        window.open('https://www.tiktok.com', '_blank');
-        toast.error(`Failed to load cookies (${response.status}) - opening TikTok without session`);
-      }
-    } catch (error) {
-      // Fallback if any error occurs
-      window.open('https://www.tiktok.com', '_blank');
-      toast.error('Error loading session - opening TikTok without cookies');
-      console.error('Error loading TikTok session:', error);
+  const handleOpenTikTokProfile = (account) => {
+    // Extract potential username from account name
+    // Remove common prefixes/suffixes and clean the name
+    let username = account.name.replace(/[^a-zA-Z0-9_.]/g, '');
+    
+    // If account name ends with underscore, remove it
+    if (username.endsWith('_')) {
+      username = username.slice(0, -1);
     }
+    
+    // Open TikTok profile
+    const tiktokUrl = `https://www.tiktok.com/@${username}`;
+    window.open(tiktokUrl, '_blank');
+    
+    toast.success(`Opening TikTok profile: @${username}`);
+  };
+
+  const handleOpenYouTubeProfile = (account) => {
+    // Extract potential channel name from account name
+    // Clean the name for YouTube channel format
+    let channelName = account.name.replace(/[^a-zA-Z0-9_-]/g, '');
+    
+    // YouTube channels can be accessed by @username or /c/channelname or /channel/channelid
+    // We'll try the @username format first (newer YouTube format)
+    const youtubeUrl = `https://www.youtube.com/@${channelName}`;
+    window.open(youtubeUrl, '_blank');
+    
+    toast.success(`Opening YouTube channel: @${channelName}`);
+  };
+
+  const handleOpenInstagramProfile = (account) => {
+    // Extract potential username from account name
+    // Remove common prefixes/suffixes and clean the name
+    let username = account.name.replace(/[^a-zA-Z0-9_.]/g, '');
+    
+    // If account name ends with underscore, remove it
+    if (username.endsWith('_')) {
+      username = username.slice(0, -1);
+    }
+    
+    // Open Instagram profile
+    const instagramUrl = `https://www.instagram.com/${username}/`;
+    window.open(instagramUrl, '_blank');
+    
+    toast.success(`Opening Instagram profile: @${username}`);
   };
 
   const pollTaskStatus = async (taskId) => {
@@ -778,10 +673,32 @@ function PlatformDetail() {
                       <button
                         onClick={() => handleOpenTikTokProfile(account)}
                         className="flex items-center px-3 py-1 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-sm"
-                        title="Open TikTok with logged-in session using stored cookies"
+                        title="Open TikTok profile"
                       >
                         <LinkIcon className="h-4 w-4 mr-1" />
-                        Open Session
+                        Open Profile
+                      </button>
+                    )}
+                    
+                    {platformName === 'YouTube' && (
+                      <button
+                        onClick={() => handleOpenYouTubeProfile(account)}
+                        className="flex items-center px-3 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm"
+                        title="Open YouTube channel"
+                      >
+                        <LinkIcon className="h-4 w-4 mr-1" />
+                        Open Profile
+                      </button>
+                    )}
+                    
+                    {platformName === 'Instagram' && (
+                      <button
+                        onClick={() => handleOpenInstagramProfile(account)}
+                        className="flex items-center px-3 py-1 bg-pink-100 text-pink-700 rounded-lg hover:bg-pink-200 transition-colors text-sm"
+                        title="Open Instagram profile"
+                      >
+                        <LinkIcon className="h-4 w-4 mr-1" />
+                        Open Profile
                       </button>
                     )}
                     
@@ -1037,7 +954,7 @@ function PlatformDetail() {
               </button>
               <button
                 onClick={handleAddAccount}
-                disabled={!accountForm.name || (platformName === 'YouTube' && !authData.client_secrets_content && !authData.use_existing_credentials) || (platformName === 'TikTok' && !authData.cookies_content && !authData.use_existing_credentials)}
+                disabled={!accountForm.name || (platformName === 'YouTube' && !authData.client_secrets_content && !authData.use_existing_credentials) || (platformName === 'TikTok' && !authData.cookies_content && !authData.use_existing_credentials) || (platformName === 'Instagram' && (!authData.instagram_username || !authData.instagram_password))}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 Create & Authenticate Account
@@ -1434,7 +1351,7 @@ function PlatformDetail() {
                 disabled={
                   (platformName === 'YouTube' && !reauthData.use_existing_credentials && !reauthData.client_secrets_content) || 
                   (platformName === 'TikTok' && !reauthData.use_existing_credentials && !reauthData.cookies_content) ||
-                  (platformName === 'Instagram' && !reauthData.access_token) ||
+                  (platformName === 'Instagram' && (!reauthData.instagram_username || !reauthData.instagram_password)) ||
                   (platformName === 'Twitter' && (!reauthData.api_key || !reauthData.api_secret || !reauthData.access_token_key || !reauthData.access_token_secret))
                 }
                 className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"

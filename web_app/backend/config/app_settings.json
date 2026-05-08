@@ -17,8 +17,8 @@
     "maintenanceAlerts": true,
     "weeklyReports": true,
     "emailAddress": "phermidagomez@gmail.com",
-    "mailjetApiKey": "4e9e331827183dec18f774eb3081c464",
-    "mailjetSecretKey": "071c7040862b59f38edfad7a890c0bfb"
+    "mailjetApiKey": "your own keys mine are obsolete",
+    "mailjetSecretKey": "your own keys mine are obsolete"
   },
   "security": {
     "sessionTimeout": 30,

@@ -1,4 +1,4 @@
-# Social Media Automation - Web Application
+# Social Media Automation - Web Application.
 
 Professional web-based social media automation suite with multi-platform support.
 
